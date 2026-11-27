@@ -1620,7 +1620,15 @@ function render(){
   }
   renderLaporanSekolah(state.pelajar.filter(lulus));
 
-  const gk=kumpulanKenderaan();
+  const gkSemua=kumpulanKenderaan();
+  const dalamKumpulan=new Set();
+  gkSemua.forEach(g=>{ if(g.ahli.length>1) g.ahli.forEach(x=>dalamKumpulan.add(x.id)); });
+  const cadangan=pasanganSatuHala()
+    .filter(k=>!k.ahli.every(x=>dalamKumpulan.has(x.id)))
+    .map((k,i)=>Object.assign({},k,{label:"C"+(i+1)}));
+  const dalamCadangan=new Set();
+  cadangan.forEach(k=>k.ahli.forEach(x=>dalamCadangan.add(x.id)));
+  const gk=gkSemua.filter(g=>g.ahli.length>1 || !dalamCadangan.has(g.ahli[0].id));
   document.getElementById("tbl-kumpulan").tBodies[0].innerHTML=gk.map(g=>{
     const sekolah=new Set(g.ahli.filter(p=>p.sekolah).map(p=>p.sekolah));
     const nama=s=>state.sekolah.find(x=>x.kod===s)?.nama||s;
@@ -1632,6 +1640,15 @@ function render(){
       <td>${g.ahli.map(p=>esc(p.nama)).join("<br>")}</td>
       <td>${g.pemandu?esc(g.pemandu.nama)+" ("+g.pemandu.kapasiti+")":"—"}</td>
       <td>${[...sekolah].map(s=>esc(nama(s))).join("<br>")||"—"}</td><td>${statusKumpulan}</td></tr>`;
+  }).join("") + cadangan.map(k=>{
+    const sekolah=new Set(k.ahli.filter(p=>p.sekolah).map(p=>p.sekolah));
+    const nama=s=>state.sekolah.find(x=>x.kod===s)?.nama||s;
+    const pem=k.ahli.filter(p=>p.kapasiti>0).sort((a,b)=>b.kapasiti-a.kapasiti)[0]||null;
+    return `<tr><td class="mono">${esc(k.label)}</td><td>${esc(k.ahli[0].komponen||"—")}</td>
+      <td>${k.ahli.map(p=>esc(p.nama)).join("<br>")}</td>
+      <td>${pem?esc(pem.nama)+" ("+pem.kapasiti+")":"—"}</td>
+      <td>${[...sekolah].map(s=>esc(nama(s))).join("<br>")||"—"}</td>
+      <td><span class="pill warn">Cadangan — belum dua hala</span></td></tr>`;
   }).join("");
 
   document.getElementById("stat-laporan").innerHTML=
@@ -1643,6 +1660,30 @@ function warnaKumpulan(label){
   if(!label) return null;
   let h=0; for(const c of String(label)) h=(h*31+c.charCodeAt(0))%360;
   return {latar:`hsl(${h} 75% 94%)`, sempad:`hsl(${h} 65% 45%)`, teks:`hsl(${h} 60% 30%)`};
+}
+function pasanganSatuHala(){
+  /* pasangan yang saling menyenaraikan tetapi TIDAK membentuk kumpulan sah
+     (kapasiti tidak cukup / berbeza komponen / tidak dua hala) */
+  const ikutIC={}; state.pelajar.forEach(q=>{ if(q.ic) ikutIC[q.ic]=q; });
+  const sah=new Set();
+  kumpulanKenderaan().forEach(g=>{
+    if(!g.cukup || g.ahli.length<2) return;
+    g.ahli.forEach(x=>sah.add(x.id));
+  });
+  const peta=new Map();
+  state.pelajar.forEach(a=>{
+    if(a.kumpulan) return;
+    (a.rakan||[]).forEach(r=>{
+      const b=ikutIC[r]; if(!b || b.kumpulan) return;
+      if(sah.has(a.id) && sah.has(b.id)) return;      // sudah jadi kumpulan sah
+      const label="C"+[a.id,b.id].sort()[0];
+      peta.set(a.id,label); peta.set(b.id,label);
+    });
+  });
+  const kumpul={};
+  state.pelajar.forEach(p=>{ const l=peta.get(p.id); if(l){ (kumpul[l] ||= []).push(p); } });
+  return Object.entries(kumpul).filter(([,a])=>a.length>1)
+    .map(([,ahli],i)=>({label:"C"+(i+1), ahli}));
 }
 function renderLaporanSekolah(senaraiPelajar){
   const wadah=document.getElementById("lap-sekolah-senarai"); if(!wadah) return;
@@ -1686,16 +1727,8 @@ function renderLaporanSekolah(senaraiPelajar){
   }
 
   /* pasangan satu hala: A senaraikan B tetapi B belum senaraikan A — ditanda "cadangan" */
-  const ikutIC={}; state.pelajar.forEach(q=>{ if(q.ic) ikutIC[q.ic]=q; });
   const satuHala=new Map();
-  state.pelajar.forEach(aq=>{
-    if(aq.kumpulan) return;
-    (aq.rakan||[]).forEach(r=>{
-      const bq=ikutIC[r]; if(!bq || bq.kumpulan) return;
-      const label="C"+[aq.id,bq.id].sort()[0];
-      satuHala.set(aq.id,label); satuHala.set(bq.id,label);
-    });
-  });
+  pasanganSatuHala().forEach(k=>k.ahli.forEach(q=>satuHala.set(q.id,k.label)));
 
   wadah.innerHTML=kodSenarai.map(kod=>{
     const ahli=ikut[kod].slice().sort((a,b)=>{
