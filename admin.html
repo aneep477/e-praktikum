@@ -1629,6 +1629,19 @@ function renderLaporanSekolah(senaraiPelajar){
       : "";
   }
 
+  /* pasangan satu hala: A senaraikan B tetapi B belum senaraikan A — ditanda "cadangan" */
+  const ikutIC={}; state.pelajar.forEach(q=>{ if(q.ic) ikutIC[q.ic]=q; });
+  const satuHala=new Map();
+  state.pelajar.forEach(aq=>{
+    if(aq.kumpulan) return;
+    (aq.rakan||[]).forEach(r=>{
+      const bq=ikutIC[r]; if(!bq || bq.kumpulan) return;
+      if((bq.rakan||[]).includes(aq.ic)) return;
+      const label="C"+[aq.id,bq.id].sort()[0];
+      satuHala.set(aq.id,label); satuHala.set(bq.id,label);
+    });
+  });
+
   wadah.innerHTML=kodSenarai.map(kod=>{
     const ahli=ikut[kod].slice().sort((a,b)=>{
       const ka=a.kumpulan||"~", kb=b.kumpulan||"~";
@@ -1637,10 +1650,18 @@ function renderLaporanSekolah(senaraiPelajar){
     });
     const pd=pdSekolah(kod).replace(/^PPD\s+/i,"");
     const baris=ahli.map(p=>{
-      const w=warnaKumpulan(p.kumpulan);
-      const kumpulanBersama=w && ahli.filter(q=>q.kumpulan===p.kumpulan).length>1;
-      const gaya=kumpulanBersama?`background:${w.latar};border-left:4px solid ${w.sempad};`:"";
-      const badge=kumpulanBersama?`<span style="font-size:10.5px;font-weight:700;color:${w.teks};border:1px solid ${w.sempad};border-radius:20px;padding:1px 7px;margin-right:8px">${esc(p.kumpulan)}</span>`:"";
+      const labelCadangan=satuHala.get(p.id)||"";
+      const label=p.kumpulan||labelCadangan;
+      const w=warnaKumpulan(label);
+      const kumpulanBersama=w && (p.kumpulan
+        ? ahli.filter(q=>q.kumpulan===p.kumpulan).length>1
+        : ahli.filter(q=>satuHala.get(q.id)===labelCadangan).length>1);
+      const gaya=kumpulanBersama
+        ? `background:${w.latar};border-left:4px solid ${w.sempad};${p.kumpulan?"":"border:1px dashed "+w.sempad+";border-left-width:4px;"}`
+        : "";
+      const badge=kumpulanBersama
+        ? `<span style="font-size:10.5px;font-weight:700;color:${w.teks};border:1px ${p.kumpulan?"solid":"dashed"} ${w.sempad};border-radius:20px;padding:1px 7px;margin-right:8px">${esc(p.kumpulan||"cadangan")}</span>`
+        : "";
       return `<div style="${gaya}padding:7px 10px;border-radius:6px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-size:12.5px">
         ${badge}<b>${esc(p.nama)}</b>
         <span style="color:var(--muted)">${esc(p.opsyen||"")}</span>
