@@ -646,6 +646,12 @@ function importPelajar(rows){
            p1:idx("pilihan1"),p2:idx("pilihan2"),p3:idx("pilihan3"),
            kap:idx("kapasiti"),rakan:idx("rakan")};
   if(i.nama<0||i.opsyen<0) throw new Error("CSV pelajar mesti ada kolum nama dan opsyen.");
+  /* kekalkan penempatan, kunci dan tetapan sedia ada mengikut IC / matrik */
+  const lama={};
+  for(const p of state.pelajar||[]){
+    if(p.ic) lama["ic:"+String(p.ic).replace(/[^0-9]/g,"")]=p;
+    if(p.matrik) lama["m:"+String(p.matrik).trim()]=p;
+  }
   const out=[];
   for(const r of rows.slice(1)){
     if(!r[i.nama]) continue;
@@ -663,8 +669,18 @@ function importPelajar(rows){
       pilihan:[(i.p1>=0?r[i.p1]:"").trim(), (i.p2>=0?r[i.p2]:"").trim(), (i.p3>=0?r[i.p3]:"").trim()].filter(Boolean),
       kapasiti:(i.kap>=0? (num(r[i.kap])||0) : 0),
       rakan:(i.rakan>=0? senaraiRakan(r[i.rakan]) : []),
-      sekolah:null, jarak:null, manual:false, kumpulan:"", status:""
+      sekolah:null, jarak:null, manual:false, kunci:false, kumpulan:"", status:""
     });
+    const baru=out[out.length-1];
+    const lamaP=lama["ic:"+baru.ic] || lama["m:"+String(baru.matrik).trim()];
+    if(lamaP){
+      baru.sekolah=lamaP.sekolah||null;
+      baru.jarak=lamaP.jarak??null;
+      baru.manual=!!lamaP.manual;
+      baru.kunci=!!lamaP.kunci;
+      baru.kumpulan=lamaP.kumpulan||"";
+      baru.status=lamaP.status||"";
+    }
   }
   if(!out.length) throw new Error("Tiada baris pelajar sah ditemui.");
   state.pelajar=out; simpan(); render();
