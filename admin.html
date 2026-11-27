@@ -357,6 +357,8 @@ td select{max-width:330px}
           <button class="btn-quiet" id="btn-clear-penempatan">Kosongkan penempatan</button>
           <button class="btn-quiet" id="btn-kunci-semua">Kunci semua yang ditempatkan</button>
           <button class="btn-quiet" id="btn-buka-kunci">Buka semua kunci</button>
+          <button class="btn-quiet" id="btn-undo">Undo tindakan terakhir</button>
+          <button class="btn-quiet" id="btn-bersih-tanpa-pilihan">Buka &amp; kosongkan yang belum memilih</button>
           <label class="fld" style="flex-direction:row;align-items:center;gap:7px;max-width:260px;font-size:12.5px">
             <input type="checkbox" id="sembunyi-kunci" checked style="width:auto">
             Sembunyikan yang dikunci
@@ -366,6 +368,7 @@ td select{max-width:330px}
             <select id="skop-tetap">
               <option value="semua">Semua pelajar</option>
               <option value="belum">Belum ditempatkan sahaja</option>
+              <option value="memilih">Hanya yang sudah memilih</option>
               <option value="daerah">Ikut daerah penapis</option>
             </select>
           </label>
@@ -813,6 +816,31 @@ function calonSemua(g){
 }
 
 /* ---------- penetapan ---------- */
+/* ---------- undo penetapan ---------- */
+const KUNCI_UNDO="praktikum-undo-v1";
+function simpanUndo(sebab){
+  try{
+    const data=state.pelajar.map(p=>({ic:p.ic, sekolah:p.sekolah||null, jarak:p.jarak??null,
+      status:p.status||"", manual:!!p.manual, kunci:!!p.kunci, kumpulan:p.kumpulan||"", dikemas:p.dikemas||""}));
+    localStorage.setItem(KUNCI_UNDO, JSON.stringify({masa:new Date().toISOString(), sebab, pelajar:data}));
+  }catch(e){}
+}
+function adaUndo(){ try{ return !!localStorage.getItem(KUNCI_UNDO); }catch(e){ return false; } }
+function undoPenempatan(){
+  let d=null;
+  try{ d=JSON.parse(localStorage.getItem(KUNCI_UNDO)||"null"); }catch(e){}
+  if(!d || !Array.isArray(d.pelajar)) return alert("Tiada rekod undo tersedia.");
+  const ikutIC={}; d.pelajar.forEach(x=>ikutIC[x.ic]=x);
+  let n=0;
+  state.pelajar.forEach(p=>{
+    const x=ikutIC[p.ic]; if(!x) return;
+    p.sekolah=x.sekolah; p.jarak=x.jarak; p.status=x.status;
+    p.manual=x.manual; p.kunci=x.kunci; p.kumpulan=x.kumpulan; p.dikemas=x.dikemas;
+    n++;
+  });
+  simpan(); render(); simpanUndo("selepas undo");
+  document.getElementById("penetapan-err").textContent="Undo selesai — "+n+" pelajar dikembalikan ke keadaan sebelum "+(d.sebab||"tindakan terakhir")+".";
+}
 function tetapkanAuto(){
   const err=document.getElementById("penetapan-err");
   err.textContent="";
@@ -821,10 +849,12 @@ function tetapkanAuto(){
   const tanpa=state.pelajar.filter(p=>p.lat==null||p.lon==null);
   if(tanpa.length) return err.textContent=tanpa.length+" pelajar tiada koordinat. Geokod alamat mereka dahulu.";
 
+  simpanUndo("jalankan penetapan");
   const skop=(document.getElementById("skop-tetap")||{}).value||"semua";
   const daerahSkop=nilai("filter-daerah");
   const dalamSkop=p=>{
     if(skop==="belum" && p.sekolah) return false;
+    if(skop==="memilih" && !pilihan(p).length) return false;
     if(skop==="daerah" && daerahSkop && daerahPelajar(p)!==daerahSkop) return false;
     return true;
   };
@@ -1715,6 +1745,12 @@ function pasang(){
   document.getElementById("kuota-min").onchange=e=>{ SLOT.min=Math.max(1,parseInt(e.target.value)||1); render(); hantarSlot(); };
   document.getElementById("kuota-max").onchange=e=>{ SLOT.max=Math.max(SLOT.min, Math.min(600, parseInt(e.target.value)||4)); render(); hantarSlot(); };
   const setKunci=(val)=>{
+    if(val){
+      const bilaSkop=(document.getElementById("skop-tetap")||{}).value||"semua";
+      const bakal=state.pelajar.filter(p=>p.sekolah && (bilaSkop!=="daerah" || !nilai("filter-daerah") || daerahPelajar(p)===nilai("filter-daerah"))).length;
+      if(!confirm("Kunci "+bakal+" pelajar yang telah ditempatkan? Selepas dikunci, penempatan mereka tidak boleh diubah tanpa buka kunci.")) return;
+      simpanUndo("kunci semua");
+    }
     const skop=(document.getElementById("skop-tetap")||{}).value||"semua";
     const daerahSkop=nilai("filter-daerah");
     let n=0;
@@ -1746,6 +1782,16 @@ function pasang(){
   };
   const cbKunci=document.getElementById("sembunyi-kunci");
   if(cbKunci) cbKunci.onchange=()=>render();
+  document.getElementById("btn-undo").onclick=()=>undoPenempatan();
+  document.getElementById("btn-bersih-tanpa-pilihan").onclick=()=>{
+    const senarai=state.pelajar.filter(p=>!pilihan(p).length && (p.sekolah||p.kunci));
+    if(!senarai.length) return alert("Tiada pelajar tanpa pilihan yang ditempatkan.");
+    if(!confirm(senarai.length+" pelajar belum menghantar pilihan. Kosongkan penempatan dan buka kunci mereka?")) return;
+    simpanUndo("kosongkan yang belum memilih");
+    senarai.forEach(p=>{ p.sekolah=null; p.jarak=null; p.status=""; p.manual=false; p.kunci=false; p.kumpulan=""; p.dikemas=new Date().toISOString(); });
+    simpan(); render();
+    document.getElementById("penetapan-err").textContent=senarai.length+" pelajar tanpa pilihan dikosongkan dan dibuka kuncinya.";
+  };
   document.getElementById("btn-kunci-semua").onclick=()=>setKunci(true);
   document.getElementById("btn-buka-kunci").onclick=()=>setKunci(false);
   document.getElementById("skop-tetap").onchange=()=>{};
