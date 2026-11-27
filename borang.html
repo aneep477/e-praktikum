@@ -448,7 +448,8 @@ function normalisasi(p){
     program:p.program||"", kohort:p.kohort||"", komponen:p.komponen||"",
     alamat:p.alamat||"", latitud:(p.latitud??p.lat)||"", longitud:(p.longitud??p.lon)||"",
     kapasiti:p.kapasiti||0,
-    rakan:Array.isArray(p.rakan)?p.rakan.join(";"):(p.rakan||"")
+    rakan:Array.isArray(p.rakan)?p.rakan.join(";"):(p.rakan||""),
+    dikunci:!!p.dikunci, sekolah_ditetapkan:p.sekolah_ditetapkan||""
   };
 }
 document.getElementById("masuk").onclick=async()=>{
@@ -490,9 +491,16 @@ document.getElementById("masuk").onclick=async()=>{
   msg.className="msg ok";
   msg.textContent="Berjaya. Kemas kini butiran di bawah.";
   document.getElementById("kad-identiti").hidden=false;
-  const buka=(tetingkap[pelajar.komponen]!==false);
+  let buka=(tetingkap[pelajar.komponen]!==false);
+  if(pelajar.dikunci){
+    buka=false;
+    msg.className="msg ok";
+    msg.textContent="Penempatan anda telah DIKUNCI oleh Unit Praktikum"+
+      (pelajar.sekolah_ditetapkan?" ("+pelajar.sekolah_ditetapkan+")":"")+
+      ". Borang tidak boleh diubah lagi. Hubungi Unit Praktikum untuk sebarang perubahan.";
+  }
   document.getElementById("kad-borang").hidden=!buka;
-  if(!buka){
+  if(!buka && !pelajar.dikunci){
     msg.className="msg bad";
     msg.textContent="Tetingkap "+pelajar.komponen+" belum dibuka oleh Unit Praktikum. Cuba lagi apabila ia dibuka.";
   }
