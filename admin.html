@@ -363,6 +363,10 @@ td select{max-width:330px}
             <input type="checkbox" id="sembunyi-kunci" checked style="width:auto">
             Sembunyikan yang dikunci
           </label>
+          <label class="fld" style="flex-direction:row;align-items:center;gap:7px;max-width:300px;font-size:12.5px">
+            <input type="checkbox" id="longgar-kuota" style="width:auto">
+            Benarkan melebihi kuota (kes khas)
+          </label>
           <span class="spacer"></span>
           <label class="fld" style="max-width:230px">Skop penetapan
             <select id="skop-tetap">
@@ -1006,7 +1010,7 @@ function tempatIndividu(p, beban, sebab, fasa){
   p.sekolah=null; p.jarak=null; p.status="gagal";
   return false;
 }
-function tukarSekolah(id, kod){
+function tukarSekolah(id, kod, paksa){
   const p=state.pelajar.find(x=>x.id===id); if(!p) return;
   if(p.kunci) return alert("Penempatan pelajar ini dikunci. Buka kunci dahulu sebelum menukar sekolah.");
   if(!kod){ p.sekolah=null; p.jarak=null; p.manual=false; p.status=""; p.dikemas=new Date().toISOString(); simpan(); render(); return; }
@@ -1022,11 +1026,14 @@ function tukarSekolah(id, kod){
   const beban=kiraBeban();
   const k=kunci(p,kod);
   const kini=(beban[k]||0) - (p.sekolah===kod?1:0);
-  if(kini >= kuotaSel(kod,p.opsyen,p.komponen)){
-    alert("Kuota penuh: "+s.nama+" hanya boleh menerima "+kuotaSel(kod,p.opsyen,p.komponen)+" pelajar opsyen "+p.opsyen+" ("+s.murid+" murid, "+p.komponen+").");
+  const kuota=kuotaSel(kod,p.opsyen,p.komponen);
+  if(kini >= kuota && !paksa){
+    alert("Kuota penuh: "+s.nama+" hanya boleh menerima "+kuota+" pelajar opsyen "+p.opsyen+" ("+s.murid+" murid, "+p.komponen+"). Untuk kes khas, tandakan kotak Benarkan melebihi kuota dahulu.");
     render(); return;
   }
-  p.sekolah=kod; p.manual=true; p.status="manual"; p.dikemas=new Date().toISOString();
+  p.sekolah=kod; p.manual=true;
+  p.status = (paksa && kini>=kuota) ? "khas" : "manual";
+  p.dikemas=new Date().toISOString();
   p.jarak=+jarakKm(p,s).toFixed(2);
   const rakanSama=state.pelajar.filter(q=>q.id!==p.id && q.kumpulan && q.kumpulan===p.kumpulan && q.sekolah && q.sekolah!==kod);
   if(rakanSama.length) alert("Perhatian: "+rakanSama.length+" rakan dalam kumpulan "+p.kumpulan+" kini di sekolah berbeza (kongsi kenderaan tidak lagi serentak).");
@@ -1365,7 +1372,7 @@ async function segerakPelajar(senyap){
 /* ---------- paparan ---------- */
 const LABEL_STATUS={
   ok:['ok','OK'], rakan:['warn','Ikut pilihan rakan'], luar:['warn','Luar pilihan'],
-  kapasiti:['bad','Kapasiti kenderaan'], manual:['warn','Manual'], gagal:['bad','Belum ditempatkan'],
+  kapasiti:['bad','Kapasiti kenderaan'], manual:['warn','Manual'], khas:['warn','Khas (lebih kuota)'], gagal:['bad','Belum ditempatkan'],
   ikut:['ok','Ikut Fasa 2'], rawak:['warn','Rawak (tiada permintaan)']
 };
 function nilai(id){ const el=document.getElementById(id); return el?el.value:""; }
@@ -1459,6 +1466,7 @@ function render(){
     const isiSlot=s?(beban[kunci(p,p.sekolah)]||0):0;
     const st = !p.sekolah?LABEL_STATUS.gagal
       : ganda?['bad','Sekolah berulang']
+      : p.status==="khas"?LABEL_STATUS.khas
       : isiSlot>kuotaSekolah(p.sekolah)?['bad','Melebihi kuota']
       : (LABEL_STATUS[p.status]||['ok','OK']);
     const semua=state.sekolah.map(sc=>({s:sc, km:jarakKm(p,sc)})).filter(x=>x.km!=null).sort((a,b)=>a.km-b.km);
@@ -1468,7 +1476,8 @@ function render(){
     }
     const opts=`<option value="">— tiada —</option>`+papar.map(c=>{
       const kb=(beban[kunci(p,c.s.kod)]||0)-(p.sekolah===c.s.kod?1:0);
-      const penuh=kb>=kuotaSekolah(c.s.kod), pernah=terlarang.has(c.s.kod)||disekat(c.s.kod);
+      const longgarK=!!(document.getElementById("longgar-kuota")||{}).checked;
+      const penuh=kb>=kuotaSekolah(c.s.kod) && !longgarK, pernah=terlarang.has(c.s.kod)||disekat(c.s.kod);
       const tanda=c.s.kod===pilihan(p)[0]?" ★":"";
       return `<option value="${esc(c.s.kod)}" ${c.s.kod===p.sekolah?"selected":""} ${(penuh||pernah)?"disabled":""}>
         ${esc(c.s.nama)} — ${c.km.toFixed(1)} km${tanda}${penuh?" (penuh)":""}${pernah?" (pernah)":""}</option>`;
@@ -1483,7 +1492,8 @@ function render(){
       <td><button class="mini" data-kunci="${p.id}">${p.kunci?"Buka":"Kunci"}</button></td></tr>`;
   }).join("");
   document.querySelectorAll("#tbl-penetapan select").forEach(sel=>{
-    sel.onchange=e=>tukarSekolah(e.target.dataset.id, e.target.value);
+    sel.onchange=e=>tukarSekolah(e.target.dataset.id, e.target.value,
+      !!(document.getElementById("longgar-kuota")||{}).checked);
   });
   document.querySelectorAll("#tbl-penetapan [data-kunci]").forEach(b=>{
     b.onclick=()=>{
