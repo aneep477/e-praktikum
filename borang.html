@@ -195,7 +195,7 @@ th{font-weight:600;color:var(--ink-2)}
         <input id="kapasiti" type="number" min="0" max="4" value="0">
       </label>
       <label class="fld wide">Rakan yang anda tumpang (no. kad pengenalan, pisah dengan titik bertindih)
-        <input id="rakan" type="text" placeholder="Contoh: 060202221234;05052251316">
+        <input id="rakan" type="text" placeholder="Contoh: 060202221234;05052251316 (titik bertindih juga diterima)">
       </label>
     </div>
 
@@ -448,7 +448,7 @@ function normalisasi(p){
     program:p.program||"", kohort:p.kohort||"", komponen:p.komponen||"",
     alamat:p.alamat||"", latitud:(p.latitud??p.lat)||"", longitud:(p.longitud??p.lon)||"",
     kapasiti:p.kapasiti||0,
-    rakan:Array.isArray(p.rakan)?p.rakan.join(";"):(p.rakan||""),
+    rakan:Array.isArray(p.rakan)?p.rakan.join(";"):String(p.rakan||"").split(/[;:,|]/).map(x=>x.trim()).filter(Boolean).join(";"),
     dikunci:!!p.dikunci, sekolah_ditetapkan:p.sekolah_ditetapkan||""
   };
 }
@@ -571,7 +571,7 @@ document.getElementById("simpan").onclick=async()=>{
     opsyen:pelajar.opsyen, komponen:pelajar.komponen, program:pelajar.program, kohort:pelajar.kohort,
     alamat, lat, lon, p1, p2, p3,
     kapasiti:Math.max(0,Math.min(4,num(document.getElementById("kapasiti").value)||0)),
-    rakan:document.getElementById("rakan").value.split(/[;,]/).map(s=>s.trim()).filter(Boolean)
+    rakan:document.getElementById("rakan").value.split(/[;:,|]/).map(s=>s.trim()).filter(Boolean)
   };
   if(API){
     try{

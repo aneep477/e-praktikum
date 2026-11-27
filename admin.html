@@ -488,11 +488,18 @@ td select{max-width:330px}
       </div>
       <div class="card">
         <h2>Mengikut sekolah</h2>
-        <div class="panel" style="max-height:34vh">
-          <table id="tbl-ringkas"><thead><tr>
-            <th>Sekolah</th><th>Jumlah</th><th>Komponen dan opsyen</th><th>Jarak purata</th>
-          </tr></thead><tbody></tbody></table>
+        <p class="help">Ahli kumpulan kongsi kenderaan disusun bersebelahan dan ditandakan warna yang sama.</p>
+        <div class="row" style="margin-bottom:12px">
+          <label class="fld" style="max-width:220px">Daerah
+            <select id="lap-daerah"><option value="">Semua daerah</option></select>
+          </label>
+          <label class="fld" style="max-width:320px">Sekolah
+            <select id="lap-sekolah"><option value="">Semua sekolah</option></select>
+          </label>
+          <span class="spacer"></span>
+          <div id="lap-legenda" style="font-size:11.5px;color:var(--muted)"></div>
         </div>
+        <div id="lap-sekolah-senarai"></div>
       </div>
       <div class="card">
         <h2>Kumpulan kongsi kenderaan</h2>
@@ -628,7 +635,7 @@ function parseCSV(text){
 }
 function senaraiRakan(v){
   if(Array.isArray(v)) return v.filter(Boolean);
-  return String(v||"").split(/[;|,]/).map(s=>s.trim()).filter(Boolean);
+  return String(v||"").split(/[;:,|]/).map(s=>s.trim()).filter(Boolean);
 }
 function pilihan(p){ return (p.pilihan||[]).filter(Boolean); }
 
@@ -1545,13 +1552,7 @@ function render(){
     kumpul[p.sekolah].butiran[kk]=(kumpul[p.sekolah].butiran[kk]||0)+1;
     if(p.jarak!=null) kumpul[p.sekolah].km.push(p.jarak);
   }
-  document.getElementById("tbl-ringkas").tBodies[0].innerHTML=Object.keys(kumpul).map(kod=>{
-    const s=state.sekolah.find(x=>x.kod===kod)||{nama:kod};
-    const d=kumpul[kod];
-    const purata=d.km.length?(d.km.reduce((a,b)=>a+b,0)/d.km.length).toFixed(1):"—";
-    const o=Object.entries(d.butiran).map(([k,v])=>esc(k)+": "+v).join("<br>");
-    return `<tr><td>${esc(s.nama)}</td><td>${d.n}</td><td>${o}</td><td>${purata}</td></tr>`;
-  }).join("");
+  renderLaporanSekolah(state.pelajar.filter(lulus));
 
   const gk=kumpulanKenderaan();
   document.getElementById("tbl-kumpulan").tBodies[0].innerHTML=gk.map(g=>{
@@ -1569,6 +1570,84 @@ function render(){
 
   document.getElementById("stat-laporan").innerHTML=
     `<b>${Object.keys(kumpul).length}</b> sekolah · ${state.pelajar.filter(lulus).filter(p=>!p.sekolah).length} belum ditempatkan · ${gk.filter(g=>g.ahli.length>1).length} kumpulan`;
+}
+
+/* ---------- laporan mengikut sekolah, berkumpulan ikut kenderaan ---------- */
+function warnaKumpulan(label){
+  if(!label) return null;
+  let h=0; for(const c of String(label)) h=(h*31+c.charCodeAt(0))%360;
+  return {latar:`hsl(${h} 75% 94%)`, sempad:`hsl(${h} 65% 45%)`, teks:`hsl(${h} 60% 30%)`};
+}
+function renderLaporanSekolah(senaraiPelajar){
+  const wadah=document.getElementById("lap-sekolah-senarai"); if(!wadah) return;
+  const pelajar=senaraiPelajar.filter(p=>p.sekolah);
+  const namaSekolah=kod=>{ const s=state.sekolah.find(x=>x.kod===kod); return s?s.nama:kod; };
+  const pdSekolah=kod=>{ const s=state.sekolah.find(x=>x.kod===kod); return s?(s.pd||""):""; };
+
+  // isi penapis
+  const selD=document.getElementById("lap-daerah"), selS=document.getElementById("lap-sekolah");
+  const fD=selD?selD.value:"", fS=selS?selS.value:"";
+  const daerahUnik=[...new Set(pelajar.map(p=>pdSekolah(p.sekolah)).filter(Boolean))].sort();
+  if(selD){
+    selD.innerHTML=`<option value="">Semua daerah</option>`+daerahUnik.map(d=>`<option value="${esc(d)}" ${d===fD?"selected":""}>${esc(d.replace(/^PPD\s+/i,""))}</option>`).join("");
+  }
+  const sekolahDlm=[...new Set(pelajar.map(p=>p.sekolah).filter(kod=>!fD||pdSekolah(kod)===fD))].sort((a,b)=>namaSekolah(a).localeCompare(namaSekolah(b)));
+  if(selS){
+    selS.innerHTML=`<option value="">Semua sekolah</option>`+sekolahDlm.map(k=>`<option value="${esc(k)}" ${k===fS?"selected":""}>${esc(namaSekolah(k))}</option>`).join("");
+  }
+
+  const ditapis=pelajar.filter(p=>{
+    if(fD && pdSekolah(p.sekolah)!==fD) return false;
+    if(fS && (selS?selS.value:p.sekolah)!==fS) return false;
+    if(fS && p.sekolah!==fS) return false;
+    return true;
+  });
+
+  // kumpul ikut sekolah
+  const ikut={};
+  ditapis.forEach(p=>{ (ikut[p.sekolah] ||= []).push(p); });
+  const kodSenarai=Object.keys(ikut).sort((a,b)=>namaSekolah(a).localeCompare(namaSekolah(b)));
+  if(!kodSenarai.length){ wadah.innerHTML=`<p class="help">Tiada penempatan untuk penapis ini.</p>`; return; }
+
+  // legenda warna
+  const legenda=document.getElementById("lap-legenda");
+  if(legenda){
+    const label=[...new Set(ditapis.map(p=>p.kumpulan).filter(l=>l && ditapis.some(q=>q.kumpulan===l)))];
+    const berpasangan=[...new Set(ditapis.filter(p=>p.kumpulan && ditapis.filter(q=>q.kumpulan===p.kumpulan).length>1).map(p=>p.kumpulan))];
+    legenda.innerHTML=berpasangan.length
+      ? "Warna kumpulan: "+berpasangan.sort().map(l=>{const w=warnaKumpulan(l);return `<span style="display:inline-block;margin-right:8px;padding:2px 7px;border-radius:20px;background:${w.latar};border-left:3px solid ${w.sempad};color:${w.teks}">${esc(l)}</span>`;}).join("")
+      : "";
+  }
+
+  wadah.innerHTML=kodSenarai.map(kod=>{
+    const ahli=ikut[kod].slice().sort((a,b)=>{
+      const ka=a.kumpulan||"~", kb=b.kumpulan||"~";
+      if(ka!==kb) return ka.localeCompare(kb);
+      return (a.nama||"").localeCompare(b.nama||"");
+    });
+    const pd=pdSekolah(kod).replace(/^PPD\s+/i,"");
+    const baris=ahli.map(p=>{
+      const w=warnaKumpulan(p.kumpulan);
+      const kumpulanBersama=w && ahli.filter(q=>q.kumpulan===p.kumpulan).length>1;
+      const gaya=kumpulanBersama?`background:${w.latar};border-left:4px solid ${w.sempad};`:"";
+      const badge=kumpulanBersama?`<span style="font-size:10.5px;font-weight:700;color:${w.teks};border:1px solid ${w.sempad};border-radius:20px;padding:1px 7px;margin-right:8px">${esc(p.kumpulan)}</span>`:"";
+      return `<div style="${gaya}padding:7px 10px;border-radius:6px;margin-bottom:4px;display:flex;align-items:center;gap:8px;font-size:12.5px">
+        ${badge}<b>${esc(p.nama)}</b>
+        <span style="color:var(--muted)">${esc(p.opsyen||"")}</span>
+        <span class="spacer" style="flex:1"></span>
+        <span style="color:var(--muted);font-size:11.5px">${p.jarak!=null?p.jarak+" km":"—"}</span>
+      </div>`;
+    }).join("");
+    return `<div style="margin-bottom:16px">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+        <b style="font-size:13.5px">${esc(namaSekolah(kod))}</b>
+        <span class="mono" style="font-size:11px;color:var(--muted)">${esc(kod)}${pd?" · "+esc(pd):""}</span>
+        <span class="spacer" style="flex:1"></span>
+        <span class="pill">${ahli.length} pelajar</span>
+      </div>
+      ${baris}
+    </div>`;
+  }).join("");
 }
 
 /* ---------- eksport status untuk borang pelajar ---------- */
@@ -1780,6 +1859,10 @@ function pasang(){
     simpan(); render();
     document.getElementById("penetapan-err").textContent="Penempatan sedia ada dikekalkan untuk "+senarai.length+" pelajar.";
   };
+  ["lap-daerah","lap-sekolah"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.onchange=()=>{ if(id==="lap-daerah"){ const s=document.getElementById("lap-sekolah"); if(s) s.value=""; } render(); };
+  });
   const cbKunci=document.getElementById("sembunyi-kunci");
   if(cbKunci) cbKunci.onchange=()=>render();
   document.getElementById("btn-undo").onclick=()=>undoPenempatan();
