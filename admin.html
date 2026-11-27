@@ -1145,6 +1145,50 @@ function isiPukal(){
 }
 
 /* ---------- segerak pelajar dari pangkalan data ---------- */
+/* ---------- penempatan dikongsi melalui pangkalan data ---------- */
+let tandatanganTerakhir="";
+let pemasaTolak=null;
+function tandatanganPenempatan(){
+  return state.pelajar.filter(p=>p.sekolah||p.kunci)
+    .map(p=>[p.ic,p.sekolah||"",p.kunci?"1":"0",p.kumpulan||"",p.status||""].join(":"))
+    .sort().join("|");
+}
+async function muatPenempatanPusat(senyap){
+  if(!apiURL()) return false;
+  try{
+    const r=await fetch(uaksiLuar("penempatan_penuh"),{cache:"no-store"});
+    const senarai=await r.json();
+    if(!Array.isArray(senarai) || !senarai.length) return false;
+    const ikutIC={}; state.pelajar.forEach(p=>{ if(p.ic) ikutIC[p.ic]=p; });
+    let dipakai=0;
+    senarai.forEach(rec=>{
+      const p=ikutIC[rec.ic]; if(!p) return;
+      if(!p.sekolah && rec.sekolah){ p.sekolah=rec.sekolah; p.jarak=rec.jarak; p.status=rec.status||"luar"; p.kumpulan=rec.kumpulan||""; dipakai++; }
+      if(rec.kunci && !p.kunci){ p.kunci=true; dipakai++; }
+    });
+    if(dipakai){ simpan(); render(); }
+    return dipakai>0;
+  }catch(e){ if(!senyap) console.warn("penempatan_penuh:",e.message); return false; }
+}
+function jadualkanTolakPenempatan(){
+  if(!apiURL()) return;
+  const t=tandatanganPenempatan();
+  if(t===tandatanganTerakhir) return;
+  clearTimeout(pemasaTolak);
+  pemasaTolak=setTimeout(async()=>{
+    const senarai=state.pelajar.filter(p=>p.sekolah||p.kunci)
+      .map(p=>({ic:p.ic, sekolah:p.sekolah||"", kumpulan:p.kumpulan||"", status:p.status||"",
+                jarak:p.jarak??null, kunci:!!p.kunci}));
+    try{
+      const r=await fetch(apiURL()+"?aksi=penempatan_simpan",{
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({aksi:"penempatan_simpan", penempatan:senarai})
+      });
+      const d=await r.json();
+      if(d && d.ok) tandatanganTerakhir=t;
+    }catch(e){ /* cuba lagi pada perubahan seterusnya */ }
+  },1500);
+}
 async function muatSekolahAuto(senyap){
   if(!apiURL()) return false;
   try{
@@ -1324,6 +1368,7 @@ function render(){
   });
   document.getElementById("stat-sejarah").innerHTML =
     `<b>${state.sejarah.length}</b> rekod arkib · ${new Set(state.sejarah.map(s=>s.matrik)).size} pelajar`;
+  jadualkanTolakPenempatan();
 
   // tetingkap penghantaran per komponen
   const elT=document.getElementById("senarai-tetingkap");
@@ -1634,7 +1679,11 @@ document.getElementById("borang-masuk").onsubmit = async (ev) => {
       localStorage.setItem(SESI, JSON.stringify({ id, exp: Date.now() + 8*60*60*1000 }));
       document.getElementById("kata-laluan").value = "";
       tunjukApp(true);
-      if(!state.sekolah.length) muatSekolahAuto(true);
+      (async()=>{
+        if(!state.sekolah.length) await muatSekolahAuto(true);
+        tandatanganTerakhir=tandatanganPenempatan();
+        await muatPenempatanPusat(true);
+      })();
     }else{
       ralat.textContent = "ID atau kata laluan salah.";
       document.getElementById("kata-laluan").value = "";
@@ -1652,6 +1701,8 @@ tunjukApp(sesiSah());
 (async () => {
   muat(); pasang(); kosongBorang(); render(); muatPermintaan();
   if(!state.sekolah.length) await muatSekolahAuto(true);
+  tandatanganTerakhir=tandatanganPenempatan();
+  await muatPenempatanPusat(true);
 })();
 /* segerak sendiri dari pangkalan data: sekali semasa buka, kemudian setiap 60 saat */
 segerakPelajar(true);
