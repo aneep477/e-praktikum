@@ -493,7 +493,7 @@ td select{max-width:330px}
 const KEY = "praktikum.penempatan.v4";
 const state = { sekolah: [], pelajar: [], sejarah: [], sekat: [], tetingkap: {}, kuota: 2,
                 permintaan: {}, hadOpsyen: {} };
-const SLOT = { muridPerSlot: 200, min: 1, max: 4 };   // kuota = murid/200, dihadkan 1–4 setiap opsyen
+const SLOT = { muridPerSlot: 200, min: 2, max: 4 };   // kuota asas 2 setiap (sekolah×opsyen), siling ikut murid/200 (2–4)
 const KOMPONEN = ["PBS 1","PBS 2","Praktikum Fasa 1","Praktikum Fasa 2/Internship"];
 const KOD = {"PBS 1":"PRKA3151","PBS 2":"PRKA3171","Praktikum Fasa 1":"PRKA3195",
              "Praktikum Fasa 2/Internship":"PRKA3245/PRKA3272","Praktikum (PDPP)":"PRKA2045"};
@@ -560,6 +560,7 @@ function permintaanKuota(kod, opsyen, komponen){
   const n=Number((k.opsyen||{})[opsyen]);
   return Number.isFinite(n) ? n : 0;
 }
+function adaManaPermintaan(){ return Object.keys(state.permintaan||{}).length>0; }
 function adaPermintaan(kod, komponen){
   const r=(state.permintaan||{})[kod];
   return !!(r && r.komponen && r.komponen[komponen]);
@@ -730,8 +731,9 @@ function bolehKumpulan(g, kod, beban, fasa){
   if(disekat(kod)) return false;
   if(!g.ahli.every(p=>opsyenLayak(p,kod))) return false;   // SJKC/SJKT terhad kepada opsyen tertentu
   const ada=adaPermintaan(kod, g.ahli[0].komponen);
-  if(fasa==="permintaan" && !ada) return false;            // pas permintaan: sekolah yang meminta sahaja
-  if(fasa==="rawak" && ada) return false;                  // pas rawak: sekolah tanpa permintaan sahaja
+  const gunaTapisPermintaan=adaManaPermintaan();           // hanya tapis jika ADA data permintaan
+  if(gunaTapisPermintaan && fasa==="permintaan" && !ada) return false;   // pas permintaan: sekolah yang meminta sahaja
+  if(gunaTapisPermintaan && fasa==="rawak" && ada) return false;         // pas rawak: sekolah tanpa permintaan sahaja
   const tally={};
   for(const p of g.ahli){
     if(sekolahTerlarang(p).has(kod)) return false;
