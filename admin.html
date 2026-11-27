@@ -508,6 +508,14 @@ td select{max-width:330px}
       </div>
       <div class="card">
         <h2>Kumpulan kongsi kenderaan</h2>
+        <div class="row" style="margin-bottom:12px">
+          <label class="fld" style="max-width:220px">Daerah
+            <select id="kum-daerah"><option value="">Semua daerah</option></select>
+          </label>
+          <label class="fld" style="max-width:320px">Sekolah
+            <select id="kum-sekolah"><option value="">Semua sekolah</option></select>
+          </label>
+        </div>
         <div class="panel" style="max-height:34vh">
           <table id="tbl-kumpulan"><thead><tr>
             <th>Kumpulan</th><th>Komponen</th><th>Ahli</th><th>Pemandu</th><th>Sekolah</th><th>Status</th>
@@ -1629,7 +1637,30 @@ function render(){
   const dalamCadangan=new Set();
   cadangan.forEach(k=>k.ahli.forEach(x=>dalamCadangan.add(x.id)));
   const gk=gkSemua.filter(g=>g.ahli.length>1 || !dalamCadangan.has(g.ahli[0].id));
-  document.getElementById("tbl-kumpulan").tBodies[0].innerHTML=gk.map(g=>{
+  /* penapis daerah/sekolah untuk jadual kumpulan */
+  const namaSek=kod=>{ const x=state.sekolah.find(y=>y.kod===kod); return x?x.nama:kod; };
+  const pdSek=kod=>{ const x=state.sekolah.find(y=>y.kod===kod); return x?(x.pd||""):""; };
+  const adaSekolah=kumpulan=>[...new Set(kumpulan.map(p=>p.sekolah).filter(Boolean))];
+  const selKD=document.getElementById("kum-daerah"), selKS=document.getElementById("kum-sekolah");
+  const fKD=selKD?selKD.value:"", fKS=selKS?selKS.value:"";
+  const semuaSekolahKumpulan=[...new Set([...gk,...cadangan].flatMap(g=>adaSekolah(g.ahli)))];
+  if(selKD){
+    const daerahUnik=[...new Set(semuaSekolahKumpulan.map(pdSek).filter(Boolean))].sort();
+    selKD.innerHTML=`<option value="">Semua daerah</option>`+daerahUnik.map(d=>`<option value="${esc(d)}" ${d===fKD?"selected":""}>${esc(d.replace(/^PPD\s+/i,""))}</option>`).join("");
+  }
+  if(selKS){
+    const senaraiSekolah=[...new Set(semuaSekolahKumpulan.filter(kod=>!fKD||pdSek(kod)===fKD))].sort((a,b)=>namaSek(a).localeCompare(namaSek(b)));
+    selKS.innerHTML=`<option value="">Semua sekolah</option>`+senaraiSekolah.map(k=>`<option value="${esc(k)}" ${k===fKS?"selected":""}>${esc(namaSek(k))}</option>`).join("");
+  }
+  const lulusKumpulan=g=>{
+    const sek=adaSekolah(g.ahli);
+    if(fKS) return sek.includes(fKS);
+    if(fKD) return sek.some(kod=>pdSek(kod)===fKD);
+    return true;
+  };
+  const gkPapar=gk.filter(lulusKumpulan), cadPapar=cadangan.filter(lulusKumpulan);
+
+  document.getElementById("tbl-kumpulan").tBodies[0].innerHTML=(gkPapar.length||cadPapar.length?gkPapar.map(g=>{
     const sekolah=new Set(g.ahli.filter(p=>p.sekolah).map(p=>p.sekolah));
     const nama=s=>state.sekolah.find(x=>x.kod===s)?.nama||s;
     const statusKumpulan = !g.cukup ? `<span class="pill bad">Kapasiti tidak cukup</span>`
@@ -1640,7 +1671,7 @@ function render(){
       <td>${g.ahli.map(p=>esc(p.nama)).join("<br>")}</td>
       <td>${g.pemandu?esc(g.pemandu.nama)+" ("+g.pemandu.kapasiti+")":"—"}</td>
       <td>${[...sekolah].map(s=>esc(nama(s))).join("<br>")||"—"}</td><td>${statusKumpulan}</td></tr>`;
-  }).join("") + cadangan.map(k=>{
+  }).join("") + cadPapar.map(k=>{
     const sekolah=new Set(k.ahli.filter(p=>p.sekolah).map(p=>p.sekolah));
     const nama=s=>state.sekolah.find(x=>x.kod===s)?.nama||s;
     const pem=k.ahli.filter(p=>p.kapasiti>0).sort((a,b)=>b.kapasiti-a.kapasiti)[0]||null;
@@ -1649,7 +1680,7 @@ function render(){
       <td>${pem?esc(pem.nama)+" ("+pem.kapasiti+")":"—"}</td>
       <td>${[...sekolah].map(s=>esc(nama(s))).join("<br>")||"—"}</td>
       <td><span class="pill warn">Cadangan — belum dua hala</span></td></tr>`;
-  }).join("");
+  }).join("") : `<tr><td colspan="6" class="small">Tiada kumpulan untuk penapis ini.</td></tr>`);
 
   document.getElementById("stat-laporan").innerHTML=
     `<b>${Object.keys(kumpul).length}</b> sekolah · ${state.pelajar.filter(lulus).filter(p=>!p.sekolah).length} belum ditempatkan · ${gk.filter(g=>g.ahli.length>1).length} kumpulan`;
@@ -2008,6 +2039,10 @@ function pasang(){
     simpan(); render();
     document.getElementById("penetapan-err").textContent="Penempatan sedia ada dikekalkan untuk "+senarai.length+" pelajar.";
   };
+  ["kum-daerah","kum-sekolah"].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.onchange=()=>{ if(id==="kum-daerah"){ const x=document.getElementById("kum-sekolah"); if(x) x.value=""; } render(); };
+  });
   ["lap-daerah","lap-sekolah"].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.onchange=()=>{ if(id==="lap-daerah"){ const s=document.getElementById("lap-sekolah"); if(s) s.value=""; } render(); };
