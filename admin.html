@@ -1681,8 +1681,8 @@ document.getElementById("borang-masuk").onsubmit = async (ev) => {
       tunjukApp(true);
       (async()=>{
         if(!state.sekolah.length) await muatSekolahAuto(true);
-        tandatanganTerakhir=tandatanganPenempatan();
         await muatPenempatanPusat(true);
+        tandatanganTerakhir=tandatanganPenempatan();
       })();
     }else{
       ralat.textContent = "ID atau kata laluan salah.";
@@ -1701,15 +1701,19 @@ tunjukApp(sesiSah());
 (async () => {
   muat(); pasang(); kosongBorang(); render(); muatPermintaan();
   if(!state.sekolah.length) await muatSekolahAuto(true);
-  tandatanganTerakhir=tandatanganPenempatan();
-  await muatPenempatanPusat(true);
 })();
-/* segerak sendiri dari pangkalan data: sekali semasa buka, kemudian setiap 60 saat */
-segerakPelajar(true);
+/* segerak sendiri dari pangkalan data: sekali semasa buka, kemudian setiap 60 saat.
+   Penempatan dan kunci dibaca SELEPAS senarai pelajar siap dimuatkan. */
+async function segerakPenuh(senyap){
+  await segerakPelajar(senyap);
+  await muatPenempatanPusat(senyap);
+  tandatanganTerakhir=tandatanganPenempatan();
+}
+segerakPenuh(true);
 setInterval(()=>{
   const f=document.activeElement;
   const sedangMenulis=f && (f.tagName==="INPUT"||f.tagName==="SELECT"||f.tagName==="TEXTAREA");
-  if(!document.hidden && !sedangMenulis) segerakPelajar(true);
+  if(!document.hidden && !sedangMenulis) segerakPenuh(true);
 }, 60000);
 
 </script>
