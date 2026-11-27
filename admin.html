@@ -355,7 +355,16 @@ td select{max-width:330px}
         <div class="row">
           <button class="btn" id="btn-jalan">Jalankan penetapan</button>
           <button class="btn-quiet" id="btn-clear-penempatan">Kosongkan penempatan</button>
+          <button class="btn-quiet" id="btn-kunci-semua">Kunci semua yang ditempatkan</button>
+          <button class="btn-quiet" id="btn-buka-kunci">Buka semua kunci</button>
           <span class="spacer"></span>
+          <label class="fld" style="max-width:230px">Skop penetapan
+            <select id="skop-tetap">
+              <option value="semua">Semua pelajar</option>
+              <option value="belum">Belum ditempatkan sahaja</option>
+              <option value="daerah">Ikut daerah penapis</option>
+            </select>
+          </label>
           <span class="stat" id="stat-penetapan"></span>
         </div>
         <p class="err" id="penetapan-err"></p>
@@ -372,7 +381,7 @@ td select{max-width:330px}
       </div>
       <div class="panel">
         <table id="tbl-penetapan"><thead><tr>
-          <th>Pelajar</th><th>Matrik dan kad pengenalan</th><th>Opsyen</th><th>Komponen</th><th>Kumpulan</th><th>Sekolah</th><th>Jarak</th><th>Status</th><th>Tukar sekolah</th>
+          <th>Pelajar</th><th>Matrik dan kad pengenalan</th><th>Opsyen</th><th>Komponen</th><th>Kumpulan</th><th>Sekolah</th><th>Jarak</th><th>Status</th><th>Tukar sekolah</th><th>Kunci</th>
         </tr></thead><tbody></tbody></table>
       </div>
     </section>
@@ -780,7 +789,14 @@ function tetapkanAuto(){
   const tanpa=state.pelajar.filter(p=>p.lat==null||p.lon==null);
   if(tanpa.length) return err.textContent=tanpa.length+" pelajar tiada koordinat. Geokod alamat mereka dahulu.";
 
-  for(const p of state.pelajar){ if(!p.manual){ p.sekolah=null; p.jarak=null; p.status=""; } }
+  const skop=(document.getElementById("skop-tetap")||{}).value||"semua";
+  const daerahSkop=nilai("filter-daerah");
+  const dalamSkop=p=>{
+    if(skop==="belum" && p.sekolah) return false;
+    if(skop==="daerah" && daerahSkop && daerahPelajar(p)!==daerahSkop) return false;
+    return true;
+  };
+  for(const p of state.pelajar){ if(!p.manual && !p.kunci && dalamSkop(p)){ p.sekolah=null; p.jarak=null; p.status=""; } }
   const beban=kiraBeban();
   const kumpulan=kumpulanKenderaan();
 
@@ -795,12 +811,12 @@ function tetapkanAuto(){
 
   const gagal=[], pecah=[];
   for(const g of kumpulan){
-    if(g.ahli.every(p=>p.manual)) continue;
+    if(g.ahli.every(p=>p.manual||p.kunci)) continue;
 
     if(!g.cukup){
       // kapasiti kenderaan tidak mencukupi — tempatkan individu, tanda
       pecah.push(g.label);
-      for(const p of g.ahli){ if(!p.manual) tempatIndividu(p, beban, "kapasiti", "permintaan"); }
+      for(const p of g.ahli){ if(!p.manual&&!p.kunci) tempatIndividu(p, beban, "kapasiti", "permintaan"); }
       continue;
     }
 
@@ -817,11 +833,12 @@ function tetapkanAuto(){
       // tiada sekolah yang boleh menampung seluruh kumpulan (kuota/opsyen) —
       // pecahkan kumpulan, tempatkan setiap ahli mengikut pilihannya sendiri
       pecah.push(g.label+" (kuota tidak cukup untuk "+g.ahli.length+" ahli)");
-      for(const p of g.ahli){ if(!p.manual) tempatIndividu(p, beban, "luar", "permintaan"); }
+      for(const p of g.ahli){ if(!p.manual&&!p.kunci && dalamSkop(p)) tempatIndividu(p, beban, "luar", "permintaan"); }
       continue;
     }
     for(const p of g.ahli){
-      if(p.manual) continue;
+      if(p.manual||p.kunci) continue;
+      if(!dalamSkop(p)) continue;
       p.sekolah=pilih.kod;
       p.jarak=+jarakKm(p,pilih.s).toFixed(2);
       // status per pelajar: OK hanya jika sekolah itu dalam senarai pilihannya sendiri
@@ -835,7 +852,7 @@ function tetapkanAuto(){
   // pas 2: pelajar belum ditempatkan → sekolah TANPA permintaan, rawak tanpa mengikut opsyen
   let rawak=0;
   const acak=(arr)=>arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
-  for(const p of acak(state.pelajar.filter(p=>!p.manual && !p.sekolah))){
+  for(const p of acak(state.pelajar.filter(p=>!p.manual && !p.kunci && !p.sekolah && dalamSkop(p)))){
     for(const s of acak(state.sekolah)){
       if(disekat(s.kod) || adaPermintaan(s.kod, p.komponen)) continue;
       if(!opsyenLayak(p,s.kod)) continue;              // SJKC/SJKT kekal terhad kepada bahasa
@@ -883,6 +900,7 @@ function tempatIndividu(p, beban, sebab, fasa){
 }
 function tukarSekolah(id, kod){
   const p=state.pelajar.find(x=>x.id===id); if(!p) return;
+  if(p.kunci) return alert("Penempatan pelajar ini dikunci. Buka kunci dahulu sebelum menukar sekolah.");
   if(!kod){ p.sekolah=null; p.jarak=null; p.manual=false; p.status=""; simpan(); render(); return; }
   const s=state.sekolah.find(x=>x.kod===kod); if(!s) return;
   if(!opsyenLayak(p,kod)){
@@ -1255,11 +1273,19 @@ function render(){
       <td class="mono">${esc(p.matrik)}<br>${esc(p.ic||"")}</td><td>${esc(p.opsyen)}</td><td>${esc(p.komponen||"—")}</td>
       <td class="mono">${esc(p.kumpulan||"—")}</td>
       <td>${s?esc(s.nama):"—"}</td><td>${p.jarak??"—"}</td>
-      <td><span class="pill ${st[0]}">${st[1]}</span></td>
-      <td><select data-id="${p.id}">${opts}</select></td></tr>`;
+      <td><span class="pill ${st[0]}">${st[1]}</span>${p.kunci?' <span class="pill warn">dikunci</span>':""}</td>
+      <td><select data-id="${p.id}">${opts}</select></td>
+      <td><button class="mini" data-kunci="${p.id}">${p.kunci?"Buka":"Kunci"}</button></td></tr>`;
   }).join("");
   document.querySelectorAll("#tbl-penetapan select").forEach(sel=>{
     sel.onchange=e=>tukarSekolah(e.target.dataset.id, e.target.value);
+  });
+  document.querySelectorAll("#tbl-penetapan [data-kunci]").forEach(b=>{
+    b.onclick=()=>{
+      const p=state.pelajar.find(x=>x.id===b.dataset.kunci); if(!p) return;
+      if(!p.kunci && !p.sekolah) return alert("Pelajar ini belum ditempatkan — tiada apa untuk dikunci.");
+      p.kunci=!p.kunci; simpan(); render();
+    };
   });
   document.getElementById("stat-sejarah").innerHTML =
     `<b>${state.sejarah.length}</b> rekod arkib · ${new Set(state.sejarah.map(s=>s.matrik)).size} pelajar`;
@@ -1499,6 +1525,21 @@ function pasang(){
   document.getElementById("kuota").onchange=e=>{ SLOT.muridPerSlot=Math.max(20,parseInt(e.target.value)||200); render(); };
   document.getElementById("kuota-min").onchange=e=>{ SLOT.min=Math.max(1,parseInt(e.target.value)||1); render(); };
   document.getElementById("kuota-max").onchange=e=>{ SLOT.max=Math.max(SLOT.min, Math.min(600, parseInt(e.target.value)||4)); render(); };
+  const setKunci=(val)=>{
+    const skop=(document.getElementById("skop-tetap")||{}).value||"semua";
+    const daerahSkop=nilai("filter-daerah");
+    let n=0;
+    state.pelajar.forEach(p=>{
+      if(!p.sekolah) return;
+      if(skop==="daerah" && daerahSkop && daerahPelajar(p)!==daerahSkop) return;
+      if(p.kunci!==val){ p.kunci=val; n++; }
+    });
+    simpan(); render();
+    document.getElementById("penetapan-err").textContent=n+" pelajar "+(val?"dikunci":"dibuka kuncinya")+".";
+  };
+  document.getElementById("btn-kunci-semua").onclick=()=>setKunci(true);
+  document.getElementById("btn-buka-kunci").onclick=()=>setKunci(false);
+  document.getElementById("skop-tetap").onchange=()=>{};
   document.getElementById("btn-clear-penempatan").onclick=()=>{
     state.pelajar.forEach(p=>{p.sekolah=null;p.jarak=null;p.manual=false;p.status="";p.kumpulan="";});
     simpan(); render();
