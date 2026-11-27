@@ -357,6 +357,10 @@ td select{max-width:330px}
           <button class="btn-quiet" id="btn-clear-penempatan">Kosongkan penempatan</button>
           <button class="btn-quiet" id="btn-kunci-semua">Kunci semua yang ditempatkan</button>
           <button class="btn-quiet" id="btn-buka-kunci">Buka semua kunci</button>
+          <label class="fld" style="flex-direction:row;align-items:center;gap:7px;max-width:260px;font-size:12.5px">
+            <input type="checkbox" id="sembunyi-kunci" checked style="width:auto">
+            Sembunyikan yang dikunci
+          </label>
           <span class="spacer"></span>
           <label class="fld" style="max-width:230px">Skop penetapan
             <select id="skop-tetap">
@@ -928,7 +932,9 @@ function sebabPilihan(p){
 }
 /* Pelajar yang menghantar/mengubah pilihan SELEPAS penempatannya dikemas. */
 function senaraiPilihanBerubah(){
+  /* pelajar yang sudah dikunci tidak dimasukkan — penempatannya sudah dimuktamadkan */
   return state.pelajar.filter(p=>{
+    if(p.kunci) return false;
     if(!pilihan(p).length) return false;
     const tPil=Date.parse(p.kemas_kini||0)||0;
     const tTap=Date.parse(p.dikemas||0)||0;
@@ -1407,7 +1413,8 @@ function render(){
   document.querySelectorAll("[data-hapus]").forEach(b=>b.onclick=()=>hapusPelajar(b.dataset.hapus));
 
   // penetapan
-  const senarai=state.pelajar.filter(lulus);
+  const sembunyiKunci=!!(document.getElementById("sembunyi-kunci")||{}).checked;
+  const senarai=state.pelajar.filter(lulus).filter(p=>!(sembunyiKunci && p.kunci));
   document.getElementById("tbl-penetapan").tBodies[0].innerHTML = senarai.map(p=>{
     const s=state.sekolah.find(x=>x.kod===p.sekolah);
     const terlarang=sekolahTerlarang(p);
@@ -1737,6 +1744,8 @@ function pasang(){
     simpan(); render();
     document.getElementById("penetapan-err").textContent="Penempatan sedia ada dikekalkan untuk "+senarai.length+" pelajar.";
   };
+  const cbKunci=document.getElementById("sembunyi-kunci");
+  if(cbKunci) cbKunci.onchange=()=>render();
   document.getElementById("btn-kunci-semua").onclick=()=>setKunci(true);
   document.getElementById("btn-buka-kunci").onclick=()=>setKunci(false);
   document.getElementById("skop-tetap").onchange=()=>{};
