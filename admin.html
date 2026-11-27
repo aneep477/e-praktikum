@@ -368,6 +368,15 @@ td select{max-width:330px}
           <span class="stat" id="stat-penetapan"></span>
         </div>
         <p class="err" id="penetapan-err"></p>
+        <div class="nota" id="kotak-berubah" style="display:none">
+          <b>Pilihan berubah selepas penempatan:</b> <span id="bil-berubah">0</span> pelajar menghantar
+          atau mengubah pilihan <u>selepas</u> penempatan mereka dikemas.
+          <div id="senarai-berubah" style="margin-top:8px;font-size:12.5px;line-height:1.6"></div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn-quiet" id="btn-berubah-semula">Buka kunci &amp; tempatkan semula</button>
+            <button class="btn-quiet" id="btn-berubah-kunci">Kekalkan penempatan sedia ada</button>
+          </div>
+        </div>
         <p class="help">Keutamaan penetapan: <b>1)</b> permintaan sekolah (opsyen yang diminta sahaja) → <b>2)</b> permintaan pelajar (pilihan 1, 2, 3) → <b>3)</b> kekalkan kumpulan kongsi kenderaan bersama → <b>4)</b> sekolah terdekat. Sekolah yang tidak menghantar permintaan menerima baki pelajar secara rawak.</p>
       </div>
       <div class="card">
@@ -381,7 +390,7 @@ td select{max-width:330px}
       </div>
       <div class="panel">
         <table id="tbl-penetapan"><thead><tr>
-          <th>Pelajar</th><th>Matrik dan kad pengenalan</th><th>Opsyen</th><th>Komponen</th><th>Kumpulan</th><th>Sekolah</th><th>Jarak</th><th>Status</th><th>Tukar sekolah</th><th>Kunci</th>
+          <th>Pelajar</th><th>Matrik dan kad pengenalan</th><th>Opsyen</th><th>Komponen</th><th>Kumpulan</th><th>Sekolah</th><th>Jarak</th><th>Status</th><th>Tukar sekolah</th><th>Sebab</th><th>Kunci</th>
         </tr></thead><tbody></tbody></table>
       </div>
     </section>
@@ -644,7 +653,7 @@ function importPelajar(rows){
            opsyen:idx("opsyen"),komponen:idx("komponen"),
            kod:idx("kod_kursus"),alamat:idx("alamat"),lat:idx("latitud"),lon:idx("longitud"),
            p1:idx("pilihan1"),p2:idx("pilihan2"),p3:idx("pilihan3"),
-           kap:idx("kapasiti"),rakan:idx("rakan")};
+           kap:idx("kapasiti"),rakan:idx("rakan"),kemas:idx("kemas_kini")};
   if(i.nama<0||i.opsyen<0) throw new Error("CSV pelajar mesti ada kolum nama dan opsyen.");
   /* kekalkan penempatan, kunci dan tetapan sedia ada mengikut IC / matrik */
   const lama={};
@@ -669,6 +678,7 @@ function importPelajar(rows){
       pilihan:[(i.p1>=0?r[i.p1]:"").trim(), (i.p2>=0?r[i.p2]:"").trim(), (i.p3>=0?r[i.p3]:"").trim()].filter(Boolean),
       kapasiti:(i.kap>=0? (num(r[i.kap])||0) : 0),
       rakan:(i.rakan>=0? senaraiRakan(r[i.rakan]) : []),
+      kemas_kini:(i.kemas>=0? String(r[i.kemas]||"").trim() : ""),
       sekolah:null, jarak:null, manual:false, kunci:false, kumpulan:"", status:""
     });
     const baru=out[out.length-1];
@@ -680,6 +690,8 @@ function importPelajar(rows){
       baru.kunci=!!lamaP.kunci;
       baru.kumpulan=lamaP.kumpulan||"";
       baru.status=lamaP.status||"";
+      baru.dikemas=lamaP.dikemas||"";
+      if(!baru.kemas_kini) baru.kemas_kini=lamaP.kemas_kini||"";
     }
   }
   if(!out.length) throw new Error("Tiada baris pelajar sah ditemui.");
@@ -857,6 +869,7 @@ function tetapkanAuto(){
       if(!dalamSkop(p)) continue;
       p.sekolah=pilih.kod;
       p.jarak=+jarakKm(p,pilih.s).toFixed(2);
+      p.dikemas=new Date().toISOString();
       // status per pelajar: OK hanya jika sekolah itu dalam senarai pilihannya sendiri
       p.status = statusKumpulan==="luar" ? "luar"
                : (pilihan(p).includes(pilih.kod) ? "ok" : "rakan");
@@ -887,6 +900,41 @@ function tetapkanAuto(){
   if(pecah.length) nota.push(pecah.length+" kumpulan dipecahkan (kapasiti kenderaan tidak cukup): "+pecah.join(", "));
   if(nota.length) err.textContent=nota.join(" · ");
 }
+/* Sebab mengapa pilihan pelajar tidak dapat dipenuhi — dipaparkan kepada admin. */
+function sebabPilihan(p){
+  const pil=pilihan(p);
+  if(!pil.length) return "Tiada pilihan dihantar oleh pelajar";
+  if(p.sekolah && pil.includes(p.sekolah)) return "—";
+  const beban=kiraBeban();
+  const nota=[];
+  for(const kod of pil){
+    const s=state.sekolah.find(x=>x.kod===kod);
+    if(!s){ nota.push(kod+": kod sekolah tidak wujud"); continue; }
+    if(disekat(kod)){ nota.push(s.nama+": disekat oleh Unit"); continue; }
+    if(!opsyenLayak(p,kod)){
+      nota.push(s.nama+": opsyen tidak layak ("+(opsyenDibenarkan(kod)||[]).join("/")+")"); continue;
+    }
+    if(adaManaPermintaan() && !adaPermintaan(kod,p.komponen)){
+      nota.push(s.nama+": tiada permintaan sekolah untuk komponen ini"); continue;
+    }
+    if(sekolahTerlarang(p).has(kod)){ nota.push(s.nama+": pernah ditempatkan di sini (komponen lain)"); continue; }
+    const k=kunci(p,kod);
+    const n=(beban[k]||0)-(p.sekolah===kod?1:0);
+    const q=kuotaSel(kod,p.opsyen,p.komponen);
+    if(n>=q){ nota.push(s.nama+": kuota penuh "+n+"/"+q); continue; }
+    nota.push(s.nama+": kosong "+n+"/"+q+" (boleh ditempatkan)");
+  }
+  return nota.join(" · ");
+}
+/* Pelajar yang menghantar/mengubah pilihan SELEPAS penempatannya dikemas. */
+function senaraiPilihanBerubah(){
+  return state.pelajar.filter(p=>{
+    if(!pilihan(p).length) return false;
+    const tPil=Date.parse(p.kemas_kini||0)||0;
+    const tTap=Date.parse(p.dikemas||0)||0;
+    return tPil>0 && tPil>tTap;
+  });
+}
 function tempatIndividu(p, beban, sebab, fasa){
   /* keutamaan: pilihan pelajar (1→3), kemudian sekolah terdekat */
   const pilih=pilihan(p).map(kod=>state.sekolah.find(s=>s.kod===kod)).filter(Boolean);
@@ -906,6 +954,7 @@ function tempatIndividu(p, beban, sebab, fasa){
     const k=kunci(p,s.kod);
     if((beban[k]||0) < kuotaSel(s.kod, p.opsyen, p.komponen)){
       p.sekolah=s.kod; p.jarak=+jarakKm(p,s).toFixed(2);
+      p.dikemas=new Date().toISOString();
       p.status = sebab==="kapasiti" ? "kapasiti" : "luar";
       beban[k]=(beban[k]||0)+1;
       return true;
@@ -917,7 +966,7 @@ function tempatIndividu(p, beban, sebab, fasa){
 function tukarSekolah(id, kod){
   const p=state.pelajar.find(x=>x.id===id); if(!p) return;
   if(p.kunci) return alert("Penempatan pelajar ini dikunci. Buka kunci dahulu sebelum menukar sekolah.");
-  if(!kod){ p.sekolah=null; p.jarak=null; p.manual=false; p.status=""; simpan(); render(); return; }
+  if(!kod){ p.sekolah=null; p.jarak=null; p.manual=false; p.status=""; p.dikemas=new Date().toISOString(); simpan(); render(); return; }
   const s=state.sekolah.find(x=>x.kod===kod); if(!s) return;
   if(!opsyenLayak(p,kod)){
     alert("Ditolak: "+s.nama+" hanya menerima opsyen "+(opsyenDibenarkan(kod)||[]).join(", ")+". Opsyen anda: "+p.opsyen+".");
@@ -934,7 +983,7 @@ function tukarSekolah(id, kod){
     alert("Kuota penuh: "+s.nama+" hanya boleh menerima "+kuotaSel(kod,p.opsyen,p.komponen)+" pelajar opsyen "+p.opsyen+" ("+s.murid+" murid, "+p.komponen+").");
     render(); return;
   }
-  p.sekolah=kod; p.manual=true; p.status="manual";
+  p.sekolah=kod; p.manual=true; p.status="manual"; p.dikemas=new Date().toISOString();
   p.jarak=+jarakKm(p,s).toFixed(2);
   const rakanSama=state.pelajar.filter(q=>q.id!==p.id && q.kumpulan && q.kumpulan===p.kumpulan && q.sekolah && q.sekolah!==kod);
   if(rakanSama.length) alert("Perhatian: "+rakanSama.length+" rakan dalam kumpulan "+p.kumpulan+" kini di sekolah berbeza (kongsi kenderaan tidak lagi serentak).");
@@ -1181,8 +1230,16 @@ async function muatPenempatanPusat(senyap){
     let dipakai=0;
     senarai.forEach(rec=>{
       const p=ikutIC[rec.ic]; if(!p) return;
-      if(!p.sekolah && rec.sekolah){ p.sekolah=rec.sekolah; p.jarak=rec.jarak; p.status=rec.status||"luar"; p.kumpulan=rec.kumpulan||""; dipakai++; }
-      if(rec.kunci && !p.kunci){ p.kunci=true; dipakai++; }
+      const capP=Date.parse(p.dikemas||0)||0;
+      const capR=Date.parse(rec.dikemas||0)||0;
+      const lebihBaharu = capR>capP;
+      if(rec.sekolah && (!p.sekolah || (lebihBaharu && rec.sekolah!==p.sekolah))){
+        p.sekolah=rec.sekolah; p.jarak=rec.jarak??null; p.status=rec.status||"luar";
+        p.kumpulan=rec.kumpulan||""; p.dikemas=rec.dikemas||""; dipakai++;
+      }
+      if(rec.kunci!==!!p.kunci && (!p.sekolah || lebihBaharu || capP===0)){
+        p.kunci=!!rec.kunci; p.dikemas=rec.dikemas||p.dikemas||""; dipakai++;
+      }
     });
     if(dipakai){ simpan(); render(); }
     return dipakai>0;
@@ -1196,7 +1253,7 @@ function jadualkanTolakPenempatan(){
   pemasaTolak=setTimeout(async()=>{
     const senarai=state.pelajar.filter(p=>p.sekolah||p.kunci)
       .map(p=>({ic:p.ic, sekolah:p.sekolah||"", kumpulan:p.kumpulan||"", status:p.status||"",
-                jarak:p.jarak??null, kunci:!!p.kunci}));
+                jarak:p.jarak??null, kunci:!!p.kunci, dikemas:p.dikemas||new Date().toISOString()}));
     try{
       const r=await fetch(apiURL()+"?aksi=penempatan_simpan",{
         method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
@@ -1236,13 +1293,14 @@ async function segerakPelajar(senyap){
     const dulu={};
     state.pelajar.forEach(p=>{ if(p.sekolah) dulu[p.ic||p.no_kad_pengenalan]=p.sekolah; });
     const tajuk=["nama","no_kad_pengenalan","no_angka_giliran","no_matrik","program","kohort","opsyen",
-                 "komponen","kod_kursus","alamat","latitud","longitud","pilihan1","pilihan2","pilihan3","kapasiti","rakan"];
+                 "komponen","kod_kursus","alamat","latitud","longitud","pilihan1","pilihan2","pilihan3","kapasiti","rakan","kemas_kini"];
     const rows=[tajuk, ...senarai.map(x=>[
       x.nama||"", x.ic||"", x.angka||"", x.matrik||"", x.program||"", x.kohort||"",
       x.opsyen||"", x.komponen||"", x.kod||"", x.alamat||"",
       x.lat??"", x.lon??"",
       (x.pilihan||[])[0]||"", (x.pilihan||[])[1]||"", (x.pilihan||[])[2]||"",
       x.kapasiti||0, (x.rakan||[]).join(";"),
+      x.kemas_kini||"",
     ])];
     importPelajar(rows);
     let pulih=0;
@@ -1377,6 +1435,7 @@ function render(){
       <td>${s?esc(s.nama):"—"}</td><td>${p.jarak??"—"}</td>
       <td><span class="pill ${st[0]}">${st[1]}</span>${p.kunci?' <span class="pill warn">dikunci</span>':""}</td>
       <td><select data-id="${p.id}">${opts}</select></td>
+      <td class="sebab" title="${esc(sebabPilihan(p))}" style="max-width:260px;font-size:11.5px;color:var(--muted)">${esc(sebabPilihan(p).slice(0,90))}${sebabPilihan(p).length>90?"…":""}</td>
       <td><button class="mini" data-kunci="${p.id}">${p.kunci?"Buka":"Kunci"}</button></td></tr>`;
   }).join("");
   document.querySelectorAll("#tbl-penetapan select").forEach(sel=>{
@@ -1386,7 +1445,7 @@ function render(){
     b.onclick=()=>{
       const p=state.pelajar.find(x=>x.id===b.dataset.kunci); if(!p) return;
       if(!p.kunci && !p.sekolah) return alert("Pelajar ini belum ditempatkan — tiada apa untuk dikunci.");
-      p.kunci=!p.kunci; simpan(); render();
+      p.kunci=!p.kunci; p.dikemas=new Date().toISOString(); simpan(); render();
     };
   });
   document.getElementById("stat-sejarah").innerHTML =
@@ -1425,6 +1484,19 @@ function render(){
   }
   const ditempat=state.pelajar.filter(p=>p.sekolah).length;
   document.getElementById("stat-penetapan").innerHTML=`<b>${ditempat}</b> / ${state.pelajar.length} ditempatkan`;
+
+  // --- pilihan berubah selepas penempatan
+  const kotakB=document.getElementById("kotak-berubah");
+  if(kotakB){
+    const berubah=senaraiPilihanBerubah();
+    document.getElementById("bil-berubah").textContent=berubah.length;
+    kotakB.style.display=berubah.length?"block":"none";
+    document.getElementById("senarai-berubah").innerHTML=berubah.slice(0,40).map(p=>{
+      const semasa=state.sekolah.find(x=>x.kod===p.sekolah);
+      const mahu=state.sekolah.find(x=>x.kod===pilihan(p)[0]);
+      return `• <b>${esc(p.nama)}</b> — sekarang: ${semasa?esc(semasa.nama):"—"} · pilihan 1: ${mahu?esc(mahu.nama):"—"}`;
+    }).join("<br>")+(berubah.length>40?`<br>… dan ${berubah.length-40} lagi`:"");
+  }
 
   // --- laporan
   const kumpul={};
@@ -1646,6 +1718,24 @@ function pasang(){
     });
     simpan(); render();
     document.getElementById("penetapan-err").textContent=n+" pelajar "+(val?"dikunci":"dibuka kuncinya")+".";
+  };
+  document.getElementById("btn-berubah-semula").onclick=()=>{
+    const senarai=senaraiPilihanBerubah();
+    if(!senarai.length) return alert("Tiada pelajar dengan pilihan berubah.");
+    if(!confirm(senarai.length+" pelajar akan dibuka kunci dan ditempatkan semula mengikut pilihan terbaharu. Teruskan?")) return;
+    senarai.forEach(p=>{
+      p.kunci=false; p.manual=false; p.sekolah=null; p.jarak=null; p.status=""; p.dikemas="";
+    });
+    simpan();
+    document.getElementById("skop-tetap").value="belum";
+    tetapkanAuto();
+    document.getElementById("penetapan-err").textContent=senarai.length+" pelajar ditempatkan semula mengikut pilihan terbaharu.";
+  };
+  document.getElementById("btn-berubah-kunci").onclick=()=>{
+    const senarai=senaraiPilihanBerubah();
+    senarai.forEach(p=>{ p.dikemas=p.kemas_kini||new Date().toISOString(); p.kunci=true; });
+    simpan(); render();
+    document.getElementById("penetapan-err").textContent="Penempatan sedia ada dikekalkan untuk "+senarai.length+" pelajar.";
   };
   document.getElementById("btn-kunci-semua").onclick=()=>setKunci(true);
   document.getElementById("btn-buka-kunci").onclick=()=>setKunci(false);
