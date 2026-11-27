@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Papan Jabatan — Penempatan Praktikum IPDA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#0b2f55; --blue-2:#1f6fb2; --blue-wash:#eaf3fb; --yellow:#f2b705;
+    --ink:#16324f; --ink-2:#3d5a75; --muted:#5a7185; --rule:#dbe4ec; --rule-2:#c9d6e2;
+    --surface:#fff; --bg:#f5f8fb; --ok:#1c7c54; --ok-wash:#e7f6ef; --bad:#c0392b; --bad-wash:#fdeeec;
+    --warn:#9a6700; --warn-wash:#fff9e6; --r:10px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,"Segoe UI",system-ui,sans-serif;font-size:14px;line-height:1.5}
+  header{background:var(--blue);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .mark{background:var(--yellow);color:var(--blue);font-weight:800;border-radius:8px;padding:5px 9px;letter-spacing:.5px}
+  header h1{font-size:15px;margin:0;font-weight:700}
+  header .sub{font-size:11.5px;opacity:.75}
+  .spacer{flex:1}
+  main{max-width:1180px;margin:0 auto;padding:22px 16px 70px}
+  .card{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r);padding:16px 18px;margin-bottom:16px;box-shadow:0 1px 2px rgba(11,47,85,.05)}
+  h2{font-size:15px;margin:0 0 10px}
+  label.fld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--ink-2);min-width:0}
+  input,select{font:inherit;padding:8px 10px;border:1px solid var(--rule-2);border-radius:8px;background:#fff;color:var(--ink);width:100%}
+  input:focus,select:focus{outline:none;border-color:var(--blue-2);box-shadow:0 0 0 3px var(--blue-wash)}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .btn{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:9px 15px;font-weight:600;cursor:pointer}
+  .btn:hover{filter:brightness(1.08)}
+  .btn-quiet{background:#fff;color:var(--blue);border:1px solid var(--rule-2);border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer}
+  .btn-mini{padding:4px 9px;font-size:11.5px;border-radius:6px;border:1px solid var(--rule-2);background:#fff;cursor:pointer}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{border-bottom:1px solid var(--rule);padding:8px 8px;text-align:left;vertical-align:middle}
+  th{background:#f0f5fa;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+  tr:hover td{background:#fbfdff}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px}
+  .pill.ok{background:var(--ok-wash);color:var(--ok)}
+  .pill.bad{background:var(--bad-wash);color:var(--bad)}
+  .pill.warn{background:var(--warn-wash);color:var(--warn)}
+  .msg{font-size:12.5px;margin-top:8px}
+  .msg.ok{color:var(--ok)} .msg.bad{color:var(--bad)}
+  .help{font-size:11.5px;color:var(--muted)}
+  .pintu{max-width:420px;margin:8vh auto;background:#fff;border:1px solid var(--rule);border-radius:14px;padding:26px;box-shadow:0 8px 26px rgba(11,47,85,.09)}
+  .pintu h2{font-size:18px;margin:0 0 4px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .ahli{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .cip{font-size:11.5px;background:var(--blue-wash);border:1px solid #cfe2f3;border-radius:20px;padding:3px 9px;color:var(--blue)}
+  .cip.penuh{background:var(--bad-wash);border-color:#f3c9c4;color:var(--bad)}
+  .kosong{padding:26px;text-align:center;color:var(--muted);font-size:13px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;padding:10px 16px;border-radius:8px;font-size:12.5px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
+  .toast.tunjuk{opacity:1}
+  @media(max-width:720px){ table{font-size:11.5px} th,td{padding:6px 5px} }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="mark">IPDA</span>
+  <div>
+    <h1>Papan Jabatan — Seliaan Praktikum</h1>
+    <div class="sub" id="sub-header">IPG Kampus Darulaman</div>
+  </div>
+  <span class="spacer"></span>
+  <button class="btn-quiet" id="btn-keluar" hidden>Log keluar</button>
+</header>
+
+<main>
+  <!-- LOG MASUK -->
+  <div class="pintu" id="pintu">
+    <h2>Log masuk jabatan</h2>
+    <p class="help">Gunakan e-mel IPG anda. Kata laluan lalai: <b>Ipda@2026</b> (tukar selepas log masuk pertama).</p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+      <label class="fld">E-mel <input type="email" id="emel" placeholder="nama@ipgkda.edu.my" autocomplete="username"></label>
+      <label class="fld">Kata laluan <input type="password" id="laluan" placeholder="••••••••" autocomplete="current-password"></label>
+      <button class="btn" id="btn-masuk">Masuk</button>
+      <p class="msg" id="msg-masuk"></p>
+    </div>
+  </div>
+
+  <!-- TUKAR KATA LALUAN -->
+  <div class="pintu" id="pintu-tukar" hidden>
+    <h2>Tukar kata laluan</h2>
+    <p class="help">Ini kali pertama anda log masuk. Sila tetapkan kata laluan sendiri (minimum 8 aksara).</p>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+      <label class="fld">Kata laluan semasa <input type="password" id="lwn-lama" autocomplete="current-password"></label>
+      <label class="fld">Kata laluan baharu <input type="password" id="lwn-baharu" autocomplete="new-password"></label>
+      <label class="fld">Ulang kata laluan baharu <input type="password" id="lwn-ulang" autocomplete="new-password"></label>
+      <button class="btn" id="btn-tukar">Simpan kata laluan</button>
+      <p class="msg" id="msg-tukar"></p>
+    </div>
+  </div>
+
+  <!-- PAPAN -->
+  <div id="papan" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h2 id="tajuk-jabatan" style="margin-bottom:2px">—</h2>
+          <div class="help" id="butiran-pensyarah">—</div>
+        </div>
+        <div class="row" style="gap:8px">
+          <label class="fld" style="min-width:220px">Komponen
+            <select id="komponen"></select>
+          </label>
+          <button class="btn-quiet" id="btn-kunci">Hantar &amp; kunci</button>
+        </div>
+      </div>
+      <div class="ahli" id="senarai-ahli"></div>
+      <p class="msg" id="msg-papan"></p>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px">
+        <h2 style="margin:0">Pelajar jabatan</h2>
+        <div class="row" style="gap:8px">
+          <label class="fld" style="min-width:170px">Opsyen
+            <select id="tapisan-opsyen"><option value="">Semua opsyen</option></select>
+          </label>
+          <label class="fld" style="min-width:170px">Status
+            <select id="tapisan-status">
+              <option value="">Semua</option>
+              <option value="belum">Belum ada penyelia</option>
+              <option value="sudah">Sudah ada penyelia</option>
+            </select>
+          </label>
+          <label class="fld" style="min-width:200px">Cari nama
+            <input id="tapisan-cari" placeholder="Taip nama pelajar">
+          </label>
+        </div>
+      </div>
+
+      <div class="row" style="margin-bottom:10px">
+        <label class="fld" style="min-width:260px">Tugaskan pelajar terpilih kepada
+          <select id="pensyarah-pukal"><option value="">— pilih pensyarah —</option></select>
+        </label>
+        <button class="btn" id="btn-tugaskan-pukal">Tugaskan</button>
+        <span class="spacer"></span>
+        <span class="help" id="kira-pelajar"></span>
+      </div>
+
+      <div style="overflow:auto;max-height:60vh">
+        <table id="tbl">
+          <thead><tr>
+            <th style="width:28px"><input type="checkbox" id="pilih-semua" style="width:auto"></th>
+            <th>Pelajar</th><th>Opsyen</th><th>Sekolah</th><th>Jarak</th><th>Penyelia</th><th></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="kosong" id="kosong" hidden>Tiada pelajar untuk tapisan ini.</div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script>
+const API = (window.KONFIG && window.KONFIG.API_URL) || "";
+const SESI_KEY = "jabatan-sesi-v1";
+let sesi = null, data = null;
+
+function $(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function toast(m){ const t=$("toast"); t.textContent=m; t.classList.add("tunjuk"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("tunjuk"),2600); }
+
+async function api(aksi, badan){
+  const url = API + "?aksi=" + encodeURIComponent(aksi);
+  const opt = badan
+    ? {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify(Object.assign({aksi}, badan))}
+    : {cache:"no-store"};
+  const r = await fetch(url, opt);
+  const t = await r.text();
+  try{ return JSON.parse(t); }catch(e){ throw new Error("Respons tidak sah: "+t.slice(0,120)); }
+}
+
+function simpanSesi(s){ sesi = s; try{ localStorage.setItem(SESI_KEY, JSON.stringify(s)); }catch(e){} }
+function bacaSesi(){ try{ return JSON.parse(localStorage.getItem(SESI_KEY)||"null"); }catch(e){ return null; } }
+function keluar(){ sesi=null; localStorage.removeItem(SESI_KEY); $("papan").hidden=true; $("pintu").hidden=false; $("pintu-tukar").hidden=true; $("btn-keluar").hidden=true; }
+
+/* ---------- log masuk ---------- */
+$("btn-masuk").onclick = async () => {
+  const m = $("msg-masuk"); m.className="msg";
+  const email = $("emel").value.trim().toLowerCase();
+  const lwn = $("laluan").value;
+  if(!email || !lwn) { m.className="msg bad"; m.textContent="Isi e-mel dan kata laluan."; return; }
+  m.textContent = "Menyemak…";
+  try{
+    const d = await api("pensyarah_masuk", {email, kata_laluan: lwn});
+    if(d.ralat){ m.className="msg bad"; m.textContent=d.ralat; return; }
+    simpanSesi({email, nama:d.pensyarah.nama, jawatan:d.pensyarah.jawatan, jabatan:d.jabatan,
+                tukar_laluan:d.pensyarah.tukar_laluan, bidang:d.pensyarah.bidang});
+    if(String(d.pensyarah.tukar_laluan)==="ya"){ $("pintu").hidden=true; $("pintu-tukar").hidden=false; $("lwn-lama").value=lwn; }
+    else { m.textContent=""; bukaPapan(); }
+  }catch(e){ m.className="msg bad"; m.textContent="Gagal: "+e.message; }
+};
+
+$("btn-tukar").onclick = async () => {
+  const m = $("msg-tukar"); m.className="msg";
+  const lama = $("lwn-lama").value, baharu = $("lwn-baharu").value, ulang = $("lwn-ulang").value;
+  if(baharu.length < 8){ m.className="msg bad"; m.textContent="Kata laluan baharu minimum 8 aksara."; return; }
+  if(baharu !== ulang){ m.className="msg bad"; m.textContent="Kata laluan tidak sama."; return; }
+  const d = await api("pensyarah_tukar_laluan", {email:sesi.email, lama, baharu});
+  if(d.ralat){ m.className="msg bad"; m.textContent=d.ralat; return; }
+  sesi.tukar_laluan="tidak"; simpanSesi(sesi);
+  m.className="msg ok"; m.textContent="Kata laluan disimpan.";
+  $("pintu-tukar").hidden=true; bukaPapan();
+};
+
+$("btn-keluar").onclick = keluar;
+
+/* ---------- papan ---------- */
+function bukaPapan(){
+  $("pintu").hidden=true; $("pintu-tukar").hidden=true; $("papan").hidden=false; $("btn-keluar").hidden=false;
+  const j = sesi.jabatan || {};
+  $("tajuk-jabatan").textContent = j.nama || "Jabatan anda";
+  $("butiran-pensyarah").textContent = sesi.nama + " · " + (sesi.jawatan||"PENSYARAH") +
+    (j.opsyen && j.opsyen.length ? " · Opsyen: " + j.opsyen.join(", ") : "");
+  $("sub-header").textContent = (j.nama ? j.nama + " — " : "") + "IPG Kampus Darulaman";
+  muatKomponen();
+}
+
+async function muatKomponen(){
+  try{
+    const tp = await api("tetingkap");
+    const senarai = Object.keys(tp||{}).filter(k=>tp[k]!==false);
+    const semua = Object.keys(tp||{});
+    const pilih = senarai.length ? senarai : semua;
+    $("komponen").innerHTML = pilih.map(k=>`<option>${esc(k)}</option>`).join("");
+    if(!pilih.length) throw new Error("tiada komponen");
+  }catch(e){
+    $("komponen").innerHTML = ["Praktikum Fasa 2/Internship","Praktikum Fasa 1","PBS 1","PBS 2"]
+      .map(k=>`<option>${k}</option>`).join("");
+  }
+  muatData();
+}
+
+async function muatData(){
+  const m = $("msg-papan"); m.className="msg"; m.textContent="Memuatkan…";
+  try{
+    data = await api("seliaan", {email: sesi.email, komponen: $("komponen").value});
+    if(data.ralat){ m.className="msg bad"; m.textContent=data.ralat; return; }
+    m.textContent = "";
+    sesi.jabatan = data.jabatan; simpanSesi(sesi);
+    isiAhli(); isiTapisan(); isiPukal(); lukisJadual();
+    $("btn-kunci").textContent = data.dikunci ? "Buka kunci seliaan" : "Hantar & kunci";
+  }catch(e){ m.className="msg bad"; m.textContent="Gagal memuat: "+e.message; }
+}
+
+function isiAhli(){
+  $("senarai-ahli").innerHTML = (data.ahli||[]).map(a=>{
+    const penuh = a.kuota>0 && a.terisi>=a.kuota;
+    return `<span class="cip ${penuh?"penuh":""}">${esc(a.nama)}${a.jawatan!=="PENSYARAH"?" · "+esc(a.jawatan):""} — ${a.terisi}/${a.kuota||"∞"}</span>`;
+  }).join("");
+}
+
+function isiTapisan(){
+  const opsyen = [...new Set((data.pelajar||[]).map(p=>p.opsyen))].sort();
+  $("tapisan-opsyen").innerHTML = `<option value="">Semua opsyen</option>` +
+    opsyen.map(o=>`<option>${esc(o)}</option>`).join("");
+}
+
+function isiPukal(){
+  $("pensyarah-pukal").innerHTML = `<option value="">— pilih pensyarah —</option>` +
+    (data.ahli||[]).map(a=>`<option value="${esc(a.email)}">${esc(a.nama)} (${a.terisi}/${a.kuota||"∞"})</option>`).join("");
+}
+
+function pelajarDitapis(){
+  const o = $("tapisan-opsyen").value, s = $("tapisan-status").value;
+  const q = $("tapisan-cari").value.trim().toLowerCase();
+  return (data.pelajar||[]).filter(p=>{
+    if(o && p.opsyen!==o) return false;
+    if(s==="belum" && p.email_pensyarah) return false;
+    if(s==="sudah" && !p.email_pensyarah) return false;
+    if(q && !String(p.nama||"").toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function lukisJadual(){
+  const senarai = pelajarDitapis();
+  const namaAhli = {}; (data.ahli||[]).forEach(a=>namaAhli[a.email]=a.nama);
+  const kunci = !!data.dikunci;
+  $("tbl").tBodies[0].innerHTML = senarai.map(p=>{
+    const pilihan = `<option value="">— belum ditetapkan —</option>` + (data.ahli||[]).map(a=>{
+      const penuh = a.kuota>0 && a.terisi>=a.kuota && p.email_pensyarah!==a.email;
+      return `<option value="${esc(a.email)}" ${p.email_pensyarah===a.email?"selected":""} ${(penuh||kunci)?"disabled":""}>${esc(a.nama)} (${a.terisi}/${a.kuota||"∞"})${penuh?" — penuh":""}</option>`;
+    }).join("");
+    return `<tr>
+      <td><input type="checkbox" class="pilih" data-ic="${esc(p.ic)}" ${kunci?"disabled":""} style="width:auto"></td>
+      <td><b>${esc(p.nama)}</b><br><span class="help">${esc(p.matrik||"")} · ${esc(p.ic)}</span></td>
+      <td>${esc(p.opsyen)}</td>
+      <td>${p.sekolah?esc(p.sekolah):'<span class="pill bad">belum ditempatkan</span>'}</td>
+      <td>${p.jarak!=null?p.jarak+" km":"—"}</td>
+      <td><select data-ic="${esc(p.ic)}" ${(kunci||p.seliaan_kunci)?"disabled":""} style="min-width:190px">${pilihan}</select></td>
+      <td>${p.email_pensyarah?`<button class="btn-mini" data-buang="${esc(p.ic)}" ${kunci?"disabled":""}>buang</button>`:'<span class="pill warn">belum</span>'}</td>
+    </tr>`;
+  }).join("");
+  $("kosong").hidden = senarai.length>0;
+  const sudah = (data.pelajar||[]).filter(p=>p.email_pensyarah).length;
+  $("kira-pelajar").textContent = `${sudah}/${(data.pelajar||[]).length} pelajar telah ditetapkan penyelia`;
+  $("pilih-semua").checked=false;
+
+  document.querySelectorAll("#tbl select[data-ic]").forEach(sel=>{
+    sel.onchange = async () => {
+      const ic = sel.dataset.ic, emailP = sel.value;
+      if(!emailP){ await buang(ic); return; }
+      const d = await api("seliaan_tetap", {email:sesi.email, ic, komponen:$("komponen").value, email_pensyarah:emailP});
+      if(d.ralat){ toast(d.ralat); await muatData(); return; }
+      toast("Seliaan disimpan."); await muatData();
+    };
+  });
+  document.querySelectorAll("#tbl [data-buang]").forEach(b=>{
+    b.onclick = ()=>buang(b.dataset.buang);
+  });
+  $("pilih-semua").onchange = e => {
+    document.querySelectorAll("#tbl input.pilih").forEach(c=>{ if(!c.disabled) c.checked=e.target.checked; });
+  };
+}
+
+async function buang(ic){
+  const d = await api("seliaan_buang", {email:sesi.email, ic, komponen:$("komponen").value});
+  if(d.ralat) toast(d.ralat); else toast("Seliaan dibuang.");
+  await muatData();
+}
+
+$("btn-tugaskan-pukal").onclick = async () => {
+  const emailP = $("pensyarah-pukal").value;
+  const terpilih = [...document.querySelectorAll("#tbl input.pilih:checked")].map(c=>c.dataset.ic);
+  if(!emailP) return toast("Pilih pensyarah dahulu.");
+  if(!terpilih.length) return toast("Tandakan sekurang-kurangnya seorang pelajar.");
+  let berjaya=0, gagal=[];
+  for(const ic of terpilih){
+    const d = await api("seliaan_tetap", {email:sesi.email, ic, komponen:$("komponen").value, email_pensyarah:emailP});
+    if(d.ralat) gagal.push(d.ralat); else berjaya++;
+  }
+  toast(`${berjaya} pelajar ditugaskan${gagal.length?", "+gagal.length+" gagal":""}.`);
+  await muatData();
+};
+
+$("btn-kunci").onclick = async () => {
+  const buka = !!data.dikunci;
+  const d = await api("seliaan_hantar", {email:sesi.email, komponen:$("komponen").value, buka});
+  if(d.ralat) return toast(d.ralat);
+  toast(buka ? "Kunci dibuka." : "Seliaan dikunci.");
+  await muatData();
+};
+
+["komponen"].forEach(id=>$(id).addEventListener("change", muatData));
+["tapisan-opsyen","tapisan-status"].forEach(id=>$(id).addEventListener("change", lukisJadual));
+$("tapisan-cari").addEventListener("input", lukisJadual);
+
+/* ---------- mula ---------- */
+(function mula(){
+  const s = bacaSesi();
+  if(s && s.email){
+    sesi = s;
+    if(String(s.tukar_laluan)==="ya"){ $("pintu").hidden=true; $("pintu-tukar").hidden=false; }
+    else bukaPapan();
+  }
+})();
+</script>
+</body>
+</html>
