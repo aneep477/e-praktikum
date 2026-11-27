@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal Sekolah — Permintaan Pelajar Praktikum IPDA</title>
+<style>
+/* Hallmark stamp: job = school staff declares praktikum needs per option; material = paper, deep blue, yellow gate; floor = Hallmark 2.0 */
+:root{
+  --paper: oklch(98.4% 0.005 250);
+  --paper-2: oklch(95.8% 0.009 252);
+  --surface: oklch(100% 0 0);
+  --ink: oklch(23% 0.03 258);
+  --ink-2: oklch(40% 0.022 256);
+  --muted: oklch(52% 0.018 255);
+  --rule: oklch(90.5% 0.01 252);
+  --blue: oklch(45% 0.135 258);
+  --blue-deep: oklch(36% 0.12 260);
+  --blue-wash: oklch(95.5% 0.026 256);
+  --yellow: oklch(85% 0.155 92);
+  --yellow-wash: oklch(97% 0.045 95);
+  --ok: oklch(48% 0.11 155);
+  --bad: oklch(52% 0.17 27);
+  --focus: oklch(45% 0.135 258);
+  --font-body: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --shadow: 0 1px 2px oklch(23% 0.03 258 / .06), 0 16px 36px -30px oklch(23% 0.03 258 / .55);
+}
+*{box-sizing:border-box}
+html,body{overflow-x:clip}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.55 var(--font-body)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:5px}
+.top{background:var(--surface);border-bottom:1px solid var(--rule)}
+.top .in{max-width:860px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:12px}
+.mark{width:40px;height:40px;border-radius:10px;background:var(--blue);color:var(--surface);display:grid;place-items:center;font-weight:700;font-size:11px;line-height:1.05;text-align:center;box-shadow:inset 0 -4px 0 var(--yellow)}
+.top b{font-size:15px;display:block;line-height:1.2}
+.top span{font-size:12px;color:var(--muted)}
+.top a{margin-left:auto;font-size:13px;color:var(--blue);text-decoration:none;border-bottom:1px solid transparent}
+.top a:hover{border-bottom-color:var(--blue)}
+main{max-width:860px;margin:0 auto;padding:26px 20px 70px}
+h1{margin:0 0 6px;font-size:26px;letter-spacing:-.015em}
+.lead{margin:0 0 22px;color:var(--ink-2);font-size:14.5px;max-width:64ch}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:20px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card h2{margin:0 0 4px;font-size:16px}
+.card .hint{margin:0 0 14px;color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:14px}
+.fld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--ink-2);min-width:0}
+.fld input,.fld select,.fld textarea{width:100%;font:inherit;padding:9px 10px;border:1px solid var(--rule);border-radius:9px;background:var(--surface);color:var(--ink)}
+.fld input:focus,.fld select:focus,.fld textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-wash);outline:none}
+.wide{grid-column:1/-1}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:14px}
+.btn{background:var(--blue);color:var(--surface);border:0;border-radius:9px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;box-shadow:0 3px 0 var(--blue-deep);transition:background-color .12s ease,transform .08s ease}
+.btn:hover{background:var(--blue-deep)}
+.btn:active{transform:translateY(1px)}
+.btn[disabled]{opacity:.55;cursor:progress}
+.btn-quiet{background:var(--surface);border:1px solid var(--rule);border-radius:9px;padding:9px 14px;font:inherit;cursor:pointer;color:var(--ink)}
+.btn-quiet:hover{border-color:var(--blue)}
+.msg{margin:12px 0 0;font-size:13.5px}
+.msg.ok{color:var(--ok)}
+.msg.bad{color:var(--bad)}
+.msg.warn{color:oklch(45% 0.13 70)}
+.ident{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:12px;margin-top:4px}
+.ident div{background:var(--paper-2);border-radius:10px;padding:10px 12px}
+.ident dt{font-size:11.5px;color:var(--muted);text-transform:none;letter-spacing:.01em}
+.ident dd{margin:2px 0 0;font-size:14px;font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 9px;border-radius:999px;background:var(--yellow-wash);color:oklch(40% 0.09 80);border:1px solid oklch(88% 0.06 90)}
+.badge.ok{background:oklch(96% 0.03 155);color:oklch(40% 0.09 155);border-color:oklch(88% 0.05 155)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--rule)}
+td{padding:7px 6px;border-bottom:1px solid var(--rule);vertical-align:middle}
+td.num{width:120px}
+td.num input{width:74px;font:inherit;padding:6px 8px;border:1px solid var(--rule);border-radius:8px;text-align:center}
+tr:last-child td{border-bottom:0}
+.hidden{display:none !important}
+.foot{max-width:860px;margin:0 auto;padding:0 20px 40px;color:var(--muted);font-size:12px}
+.kotak{background:var(--yellow-wash);border:1px solid oklch(90% 0.07 92);border-radius:11px;padding:12px 14px;font-size:13px;color:oklch(38% 0.06 80);margin:0 0 16px}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <div class="mark">IPDA</div>
+  <div><b>Portal Sekolah</b><span>Permintaan pelajar praktikum · IPG Kampus Darulaman</span></div>
+  <a href="index.html">Portal utama</a>
+</div></header>
+
+<main>
+  <h1>Permintaan pelajar praktikum</h1>
+  <p class="lead">Masukkan kod sekolah anda, benarkan peranti membaca lokasi, kemudian nyatakan bilangan pelajar praktikum yang diperlukan mengikut opsyen. Unit Praktikum akan menempatkan pelajar berdasarkan permintaan ini.</p>
+
+  <div class="kotak">
+    <b>Log masuk hanya dalam kawasan sekolah.</b> Sistem menyemak jarak peranti anda dengan koordinat sekolah (had 300 m). Sila hidupkan GPS dan berada di dalam kawasan sekolah semasa mengisi.
+  </div>
+
+  <!-- LOG MASUK -->
+  <section class="card" id="kad-masuk">
+    <h2>Log masuk sekolah</h2>
+    <p class="hint">Gunakan kod sekolah KPM, contoh <span style="font-family:ui-monospace,monospace">KBA4034</span>.</p>
+    <div class="grid">
+      <label class="fld">Kod sekolah
+        <input id="kod" inputmode="text" autocomplete="off" placeholder="KBA4034" maxlength="10" style="text-transform:uppercase">
+      </label>
+      <label class="fld">Komponen
+        <select id="komponen-masuk"><option>— dipilih selepas semakan —</option></select>
+      </label>
+    </div>
+    <div class="row">
+      <button class="btn" id="btn-masuk">Semak lokasi &amp; masuk</button>
+      <span class="msg" id="msg-masuk"></span>
+    </div>
+  </section>
+
+  <!-- BORANG -->
+  <section id="bahagian-borang" class="hidden">
+    <section class="card">
+      <h2 id="nama-sekolah">—</h2>
+      <p class="hint" id="butiran-sekolah">—</p>
+      <div class="row" style="margin-top:6px">
+        <span class="badge ok" id="badge-geo">Lokasi disahkan</span>
+        <span class="badge" id="badge-masa">—</span>
+        <button class="btn-quiet" id="btn-keluar" style="margin-left:auto">Log keluar</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Keperluan pelajar mengikut opsyen</h2>
+      <p class="hint">Isi bilangan pelajar yang diperlukan. Biarkan 0 jika tiada keperluan bagi opsyen itu.</p>
+      <table>
+        <thead><tr><th>Opsyen</th><th style="text-align:center">Bilangan diminta</th><th>Catatan sekolah</th></tr></thead>
+        <tbody id="baris-opsyen"></tbody>
+      </table>
+      <div class="grid" style="margin-top:16px">
+        <label class="fld">Nama pegawai / guru penyelaras
+          <input id="pic" autocomplete="off" placeholder="Nama penuh">
+        </label>
+        <label class="fld">No. telefon
+          <input id="telefon" inputmode="tel" autocomplete="off" placeholder="04xxxxxxx / 01xxxxxxxx">
+        </label>
+        <label class="fld wide">Catatan tambahan (pilihan)
+          <textarea id="catatan" rows="2" placeholder="Contoh: hanya untuk kelas pagi, tiada guru pembimbing opsyen Sains"></textarea>
+        </label>
+      </div>
+      <div class="row">
+        <button class="btn" id="btn-hantar">Hantar permintaan</button>
+        <button class="btn-quiet" id="btn-semula">Muat semula data</button>
+        <span class="msg" id="msg-hantar"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Ringkasan permintaan dihantar</h2>
+      <p class="hint" id="hint-ringkas">Belum ada permintaan dihantar untuk komponen ini.</p>
+      <table><thead><tr><th>Komponen</th><th>Opsyen</th><th style="text-align:right">Bilangan</th></tr></thead><tbody id="baris-ringkas"></tbody></table>
+    </section>
+  </section>
+</main>
+
+<div class="foot">
+  <p>Data permintaan dihantar kepada Unit Praktikum IPG Kampus Darulaman. Sekolah yang tidak menghantar permintaan masih boleh menerima pelajar, tetapi penempatan dibuat secara rawak tanpa mengikut opsyen.</p>
+</div>
+
+<script src="config.js"></script>
+<script>
+const KONFIG = window.KONFIG || {};
+const API = (KONFIG.API_URL || "").replace(/\/$/, "");
+const KUNCI = KONFIG.KUNCI || "";
+const SESI = "praktikum.sekolah.sesi";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+let sesi = null;      // { kod, nama, jarak, masuk, komponen }
+let dataMasuk = null; // respons sekolah_masuk
+
+function q(url) {
+  return fetch(url + (url.includes("?") ? "&" : "?") + (KUNCI ? "kunci=" + encodeURIComponent(KUNCI) : ""), { cache: "no-store" })
+    .then((r) => r.json());
+}
+function hantar(url, badan) {
+  return fetch(url + (KUNCI ? (url.includes("?") ? "&" : "?") + "kunci=" + encodeURIComponent(KUNCI) : ""), {
+    method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(badan),
+  }).then((r) => r.json());
+}
+function posisi() {
+  return new Promise((selesai, gagal) => {
+    if (!navigator.geolocation) return gagal(new Error("Peranti ini tidak menyokong pengesanan lokasi."));
+    navigator.geolocation.getCurrentPosition(
+      (p) => selesai({ lat: p.coords.latitude, lon: p.coords.longitude, ketepatan: Math.round(p.coords.accuracy || 0) }),
+      (e) => gagal(new Error(e.code === 1
+        ? "Kebenaran lokasi ditolak. Benarkan akses lokasi untuk halaman ini, kemudian cuba lagi."
+        : "Lokasi tidak dapat dikesan. Pastikan GPS hidup dan anda berada di kawasan lapang.")),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
+    );
+  });
+}
+function simpanSesi() { try { sessionStorage.setItem(SESI, JSON.stringify(sesi)); } catch (e) {} }
+function bacaSesi() {
+  try {
+    const s = JSON.parse(sessionStorage.getItem(SESI) || "null");
+    if (!s || Date.now() - s.masa > 45 * 60 * 1000) return null;
+    return s;
+  } catch (e) { return null; }
+}
+function keluarSesi() { try { sessionStorage.removeItem(SESI); } catch (e) {} }
+
+/* ---------- paparan ---------- */
+function paparBorang() {
+  $("kad-masuk").classList.add("hidden");
+  $("bahagian-borang").classList.remove("hidden");
+  const s = dataMasuk.sekolah;
+  $("nama-sekolah").textContent = s.nama;
+  $("butiran-sekolah").textContent = [s.kod, s.ppd, s.bandar].filter(Boolean).join(" · ");
+  $("badge-geo").textContent = "Lokasi disahkan · " + dataMasuk.jarak + " m dari sekolah";
+  const tp = dataMasuk.tetingkap || {};
+  const buka = Object.keys(tp).filter((k) => tp[k] !== false);
+  const sel = $("komponen-masuk");
+  sel.innerHTML = buka.length ? buka.map((k) => `<option>${esc(k)}</option>`).join("") : "";
+  if (!buka.length) {
+    $("msg-hantar").className = "msg bad";
+    $("msg-hantar").textContent = "Unit Praktikum belum membuka tetingkap permintaan untuk mana-mana komponen.";
+    $("btn-hantar").disabled = true;
+  }
+  muatSemula();
+}
+
+function muatSemula() {
+  const komp = $("komponen-masuk").value;
+  const opsyenSemua = dataMasuk.opsyen;
+  const rekod = (dataMasuk.permintaan && dataMasuk.permintaan.komponen && dataMasuk.permintaan.komponen[komp]) || null;
+  const nilai = (rekod && rekod.opsyen) || {};
+  $("baris-opsyen").innerHTML = opsyenSemua.map((o) =>
+    `<tr><td>${esc(o)}</td>
+      <td class="num"><input type="number" min="0" max="20" step="1" data-opsyen="${esc(o)}" value="${Number(nilai[o] || 0)}" aria-label="Bilangan ${esc(o)}"></td>
+      <td style="color:var(--muted);font-size:12.5px">${esc(o === "Bahasa Cina" ? "SJKC sahaja" : o === "Bahasa Tamil" ? "SJKT sahaja" : "")}</td></tr>`
+  ).join("");
+  if (rekod) {
+    $("pic").value = rekod.pic || (dataMasuk.permintaan.pic || "");
+    $("telefon").value = rekod.telefon || (dataMasuk.permintaan.telefon || "");
+    $("catatan").value = rekod.catatan || "";
+    $("hint-ringkas").textContent = "Kemas kini terakhir: " + new Date(rekod.dikemas).toLocaleString("ms-MY") +
+      (rekod.dilaras_admin ? " · dilaras oleh Unit Praktikum" : "");
+  } else {
+    $("catatan").value = "";
+    $("hint-ringkas").textContent = "Belum ada permintaan dihantar untuk komponen ini.";
+  }
+  const ringkas = [];
+  const komponenSemua = (dataMasuk.permintaan && dataMasuk.permintaan.komponen) || {};
+  for (const k of Object.keys(komponenSemua)) {
+    for (const [o, n] of Object.entries(komponenSemua[k].opsyen || {})) ringkas.push([k, o, n]);
+  }
+  $("baris-ringkas").innerHTML = ringkas.length
+    ? ringkas.map(([k, o, n]) => `<tr><td>${esc(k)}</td><td>${esc(o)}</td><td style="text-align:right">${n}</td></tr>`).join("")
+    : `<tr><td colspan="3" style="color:var(--muted)">Tiada rekod.</td></tr>`;
+}
+
+/* ---------- log masuk ---------- */
+async function masuk() {
+  const kod = $("kod").value.trim().toUpperCase();
+  const msg = $("msg-masuk");
+  if (!/^[A-Z]{2,4}[0-9A-Z]{3,6}$/.test(kod)) { msg.className = "msg bad"; msg.textContent = "Format kod sekolah tidak sah. Contoh: KBA4034"; return; }
+  $("btn-masuk").disabled = true;
+  msg.className = "msg"; msg.textContent = "Menyemak lokasi peranti…";
+  try {
+    const p = await posisi();
+    msg.textContent = "Menyemak jarak dari sekolah (ketepatan ±" + p.ketepatan + " m)…";
+    const d = await hantar(API + "/?aksi=sekolah_masuk", { kod, lat: p.lat, lon: p.lon });
+    if (d.ralat) { msg.className = "msg bad"; msg.textContent = d.ralat; return; }
+    dataMasuk = d;
+    sesi = { kod: d.sekolah.kod, nama: d.sekolah.nama, jarak: d.jarak, masa: Date.now(), komponen: "" };
+    simpanSesi();
+    msg.className = "msg ok"; msg.textContent = "Berjaya masuk.";
+    paparBorang();
+  } catch (e) {
+    msg.className = "msg bad"; msg.textContent = e.message;
+  } finally {
+    $("btn-masuk").disabled = false;
+  }
+}
+
+async function hantarkan() {
+  const msg = $("msg-hantar");
+  const komponen = $("komponen-masuk").value;
+  const opsyen = {};
+  for (const inp of document.querySelectorAll("#baris-opsyen input[data-opsyen]")) {
+    const n = Math.max(0, Math.min(20, Math.round(Number(inp.value) || 0)));
+    inp.value = n;
+    if (n > 0) opsyen[inp.dataset.opsyen] = n;
+  }
+  if (!Object.keys(opsyen).length) { msg.className = "msg bad"; msg.textContent = "Isi sekurang-kurangnya satu opsyen dengan bilangan melebihi 0."; return; }
+  const pic = $("pic").value.trim();
+  if (pic.length < 3) { msg.className = "msg bad"; msg.textContent = "Nama pegawai sekolah wajib diisi."; return; }
+  $("btn-hantar").disabled = true;
+  msg.className = "msg"; msg.textContent = "Mengesahkan lokasi sebelum menghantar…";
+  try {
+    const p = await posisi();
+    const d = await hantar(API + "/?aksi=permintaan_simpan", {
+      kod: sesi.kod, lat: p.lat, lon: p.lon, komponen, opsyen,
+      pic, telefon: $("telefon").value.trim(), catatan: $("catatan").value.trim(),
+    });
+    if (d.ralat) { msg.className = "msg bad"; msg.textContent = d.ralat; return; }
+    dataMasuk.permintaan = d.permintaan;
+    msg.className = "msg ok";
+    msg.textContent = "Permintaan dihantar pada " + new Date(d.permintaan.komponen[komponen].dikemas).toLocaleString("ms-MY") + ".";
+    muatSemula();
+  } catch (e) {
+    msg.className = "msg bad"; msg.textContent = e.message;
+  } finally {
+    $("btn-hantar").disabled = false;
+  }
+}
+
+/* ---------- ikatan ---------- */
+$("btn-masuk").addEventListener("click", masuk);
+$("kod").addEventListener("keydown", (e) => { if (e.key === "Enter") masuk(); });
+$("komponen-masuk").addEventListener("change", muatSemula);
+$("btn-hantar").addEventListener("click", hantarkan);
+$("btn-semula").addEventListener("click", async () => {
+  const p = await posisi().catch(() => null);
+  if (!p) { $("msg-hantar").className = "msg bad"; $("msg-hantar").textContent = "Lokasi tidak dapat dibaca."; return; }
+  const d = await hantar(API + "/?aksi=sekolah_masuk", { kod: sesi.kod, lat: p.lat, lon: p.lon });
+  if (d.ralat) { $("msg-hantar").className = "msg bad"; $("msg-hantar").textContent = d.ralat; return; }
+  dataMasuk = d; muatSemula();
+  $("msg-hantar").className = "msg ok"; $("msg-hantar").textContent = "Data dimuat semula.";
+});
+$("btn-keluar").addEventListener("click", () => {
+  keluarSesi(); sesi = null; dataMasuk = null;
+  $("bahagian-borang").classList.add("hidden"); $("kad-masuk").classList.remove("hidden");
+  $("kod").value = ""; $("msg-masuk").textContent = "";
+});
+
+/* sesi boleh disambung semula dalam 45 minit, tetapi lokasi disemak semula */
+(async function mula() {
+  const s = bacaSesi();
+  if (!s) return;
+  try {
+    const p = await posisi();
+    const d = await hantar(API + "/?aksi=sekolah_masuk", { kod: s.kod, lat: p.lat, lon: p.lon });
+    if (d.ralat) { keluarSesi(); return; }
+    dataMasuk = d; sesi = { ...s, jarak: d.jarak, masa: Date.now() }; simpanSesi(); paparBorang();
+  } catch (e) { /* biar pengguna log masuk semula */ }
+})();
+</script>
+</body>
+</html>

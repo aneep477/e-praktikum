@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Penempatan Praktikum IPDA</title>
+<style>
+/* Hallmark stamp: job = route a student or the practicum unit into the right door; material = paper, deep blue, one yellow gate; floor = Hallmark 2.0 */
+:root{
+  --paper: oklch(98.4% 0.005 250);
+  --surface: oklch(100% 0 0);
+  --ink: oklch(23% 0.03 258);
+  --ink-2: oklch(40% 0.022 256);
+  --muted: oklch(52% 0.018 255);
+  --rule: oklch(90.5% 0.01 252);
+  --blue: oklch(45% 0.135 258);
+  --blue-deep: oklch(34% 0.12 260);
+  --blue-wash: oklch(95.5% 0.026 256);
+  --yellow: oklch(85% 0.155 92);
+  --yellow-wash: oklch(97% 0.045 95);
+  --focus: oklch(45% 0.135 258);
+  --font-body: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --shadow: 0 1px 2px oklch(23% 0.03 258 / .06), 0 18px 40px -28px oklch(23% 0.03 258 / .5);
+}
+*{box-sizing:border-box}
+html,body{overflow-x:clip}
+body{
+  margin:0;min-height:100vh;background:var(--paper);color:var(--ink);
+  font:16px/1.55 var(--font-body);display:grid;place-items:center;padding:32px 20px;
+  background-image:radial-gradient(circle at 12% 0%, var(--blue-wash), transparent 55%);
+}
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px;border-radius:6px}
+.wrap{width:100%;max-width:940px}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:34px}
+.mark{
+  width:52px;height:52px;border-radius:13px;background:var(--blue);color:var(--surface);
+  display:grid;place-items:center;font-weight:700;font-size:14px;
+  box-shadow:inset 0 -5px 0 var(--yellow);
+}
+.who{display:flex;flex-direction:column;line-height:1.25}
+.who b{font-size:15px}
+.who span{font-size:12.5px;color:var(--muted)}
+
+h1{margin:0 0 12px;font-size:clamp(28px,4.4vw,42px);line-height:1.12;letter-spacing:-.02em;font-weight:700;max-width:22ch}
+.lead{margin:0 0 34px;max-width:58ch;color:var(--ink-2);font-size:16.5px}
+
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:16px}
+.choice{
+  display:block;text-decoration:none;color:inherit;background:var(--surface);
+  border:1px solid var(--rule);border-radius:16px;padding:24px;box-shadow:var(--shadow);
+  transition:border-color .14s ease,transform .14s ease;
+  position:relative;overflow:hidden;
+}
+.choice::after{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--yellow);
+  transform:scaleY(0);transform-origin:top;transition:transform .18s ease;
+}
+.choice:hover{border-color:var(--blue);transform:translateY(-2px)}
+.choice:hover::after{transform:scaleY(1)}
+.choice .kicker{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.choice h2{margin:0 0 8px;font-size:20px;font-weight:650}
+.choice p{margin:0 0 16px;color:var(--ink-2);font-size:14px}
+.choice .go{
+  display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--blue);
+}
+.choice.primary{background:var(--blue);border-color:var(--blue);color:var(--surface)}
+.choice.primary .kicker{color:oklch(88% 0.03 255)}
+.choice.primary p{color:oklch(93% 0.015 255)}
+.choice.primary .go{color:var(--yellow)}
+
+.facts{display:flex;gap:26px;flex-wrap:wrap;margin-top:34px;padding-top:22px;border-top:1px solid var(--rule)}
+.fact b{display:block;font-size:19px;font-weight:650}
+.fact span{font-size:12.5px;color:var(--muted)}
+footer{margin-top:30px;font-size:12.5px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="mark">IPDA</div>
+    <div class="who">
+      <b>Penempatan Praktikum</b>
+      <span>IPG Kampus Darulaman · Kubang Pasu dan Kota Setar</span>
+    </div>
+  </div>
+
+  <h1>Pilih pintu masuk anda</h1>
+  <p class="lead">Pelajar memilih sekolah dan rakan kongsi kenderaan menggunakan no. kad pengenalan. Unit Praktikum menetapkan penempatan mengikut kuota setiap sekolah.</p>
+
+  <div class="choices">
+    <a class="choice" href="borang.html">
+      <div class="kicker">Untuk pelajar</div>
+      <h2>Menu pelajar</h2>
+      <p>Log masuk dengan no. kad pengenalan, masukkan alamat kediaman, pilih sehingga tiga sekolah dan senaraikan rakan kongsi kenderaan.</p>
+      <span class="go">Masuk ke borang pelajar</span>
+    </a>
+    <a class="choice primary" href="admin.html">
+      <div class="kicker">Untuk kakitangan</div>
+      <h2>Menu Unit Praktikum</h2>
+      <p>Urus senarai sekolah dan pelajar, tapis mengikut daerah, kohort dan opsyen, sekat sekolah, jalankan penetapan dan muat turun laporan.</p>
+      <span class="go">Masuk ke ruang Unit Praktikum</span>
+    </a>
+    <a class="choice" href="sekolah.html">
+      <div class="kicker">Untuk sekolah</div>
+      <h2>Menu sekolah</h2>
+      <p>Log masuk dengan kod sekolah dalam kawasan sekolah, kemudian nyatakan bilangan pelajar praktikum yang diperlukan mengikut opsyen.</p>
+      <span class="go">Masuk ke portal sekolah</span>
+    </a>
+  </div>
+
+  <div class="facts">
+    <div class="fact"><b>175</b><span>sekolah rendah</span></div>
+    <div class="fact"><b>130</b><span>pelajar PISMP 2022</span></div>
+    <div class="fact"><b>5</b><span>komponen Amalan Profesional</span></div>
+    <div class="fact"><b>3</b><span>daerah</span></div>
+  </div>
+
+  <footer>Data sekolah: Senarai Sekolah KPM 2022, jejari 30 km dari IPG Kampus Darulaman. Data pelajar dalam sistem ini ialah data simulasi.</footer>
+</div>
+</body>
+</html>

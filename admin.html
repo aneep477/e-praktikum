@@ -1,0 +1,1556 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Penempatan Praktikum IPDA</title>
+<style>
+/* Hallmark stamp: job = place practicum students into district schools; material = cool paper, deep blue ink, one yellow signal; floor = Hallmark 2.0 rules 1-15 */
+:root{
+  --paper: oklch(98.4% 0.005 250);
+  --paper-2: oklch(95.8% 0.009 252);
+  --surface: oklch(100% 0 0);
+  --ink: oklch(23% 0.03 258);
+  --ink-2: oklch(38% 0.022 256);
+  --muted: oklch(52% 0.018 255);
+  --rule: oklch(90.5% 0.01 252);
+  --rule-2: oklch(84% 0.014 252);
+  --blue: oklch(45% 0.135 258);
+  --blue-deep: oklch(37% 0.122 260);
+  --blue-wash: oklch(95.5% 0.026 256);
+  --yellow: oklch(85% 0.155 92);
+  --yellow-deep: oklch(58% 0.125 82);
+  --yellow-wash: oklch(97% 0.045 95);
+  --ok: oklch(48% 0.11 155);
+  --ok-wash: oklch(95% 0.03 155);
+  --bad: oklch(52% 0.17 27);
+  --bad-wash: oklch(96% 0.03 27);
+  --warn: oklch(52% 0.11 70);
+  --focus: oklch(45% 0.135 258);
+  --font-body: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --r-card: 12px;
+  --r-input: 8px;
+  --shadow-card: 0 1px 2px oklch(23% 0.03 258 / .06), 0 10px 24px -18px oklch(23% 0.03 258 / .45);
+  --shadow-key: 0 3px 0 var(--blue-deep);
+}
+*{box-sizing:border-box}
+html,body{overflow-x:clip}
+body{
+  margin:0;background:var(--paper);color:var(--ink);
+  font:15px/1.55 var(--font-body);
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--blue)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+
+.shell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+
+.rail{
+  background:var(--surface);border-right:1px solid var(--rule);
+  padding:22px 16px;display:flex;flex-direction:column;gap:6px;
+  position:sticky;top:0;height:100vh;overflow:auto;
+}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.brand-mark{
+  width:44px;height:44px;border-radius:10px;background:var(--blue);color:var(--surface);
+  display:grid;place-items:center;font-weight:700;font-size:13px;letter-spacing:.02em;
+  box-shadow:inset 0 -4px 0 var(--yellow);
+}
+.brand-text{display:flex;flex-direction:column;line-height:1.2}
+.brand-name{font-weight:650;font-size:15px}
+.brand-sub{font-size:12px;color:var(--muted)}
+.rail nav{display:flex;flex-direction:column;gap:2px;margin-top:18px}
+.rail nav button{
+  display:flex;align-items:center;gap:10px;width:100%;
+  background:none;border:0;border-radius:8px;padding:9px 10px;
+  font:inherit;color:var(--ink-2);text-align:left;cursor:pointer;
+  border-left:3px solid transparent;
+  transition:background-color .12s ease,color .12s ease,border-color .12s ease;
+}
+.rail nav button:hover{background:var(--paper-2)}
+.rail nav button.active{background:var(--blue-wash);color:var(--blue-deep);border-left-color:var(--yellow);font-weight:600}
+.rail nav svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7}
+.rail .count{margin-left:auto;font-size:12px;color:var(--muted)}
+.rail-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--rule);font-size:12px;color:var(--muted)}
+.rail .filters{display:flex;flex-direction:column;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--rule)}
+.rail .filters .fld{font-size:11.5px;color:var(--muted)}
+.rail .filters select{padding:6px 8px;font-size:13px}
+
+.main{min-width:0;padding:26px 30px 70px;max-width:1320px}
+.view{display:none}
+.view.active{display:block}
+.view-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.view-head h1{margin:0;font-size:23px;font-weight:680;letter-spacing:-.01em}
+.view-head p{margin:4px 0 0;color:var(--muted);font-size:13.5px;max-width:62ch}
+
+.card{
+  background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-card);
+  padding:16px 18px;margin-bottom:16px;box-shadow:var(--shadow-card);
+}
+.card > h2{margin:0 0 10px;font-size:15px;font-weight:650}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+.help{font-size:12.5px;color:var(--muted);margin:8px 0 0}
+.err{color:var(--bad);font-size:13px;margin:8px 0 0}
+.mono{font-family:var(--font-mono);font-size:12px}
+.pintu{position:fixed;inset:0;background:var(--paper);display:grid;place-items:center;z-index:60;padding:20px}
+.pintu[hidden]{display:none}
+.pintu-kad{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--rule);border-radius:14px;padding:22px;box-shadow:var(--shadow-card);display:flex;flex-direction:column;gap:12px}
+.pintu-kad .brand{margin-bottom:2px}
+.pintu-kad .err{min-height:16px;margin:0}
+
+button{font:inherit}
+.btn{
+  background:var(--blue);color:var(--surface);border:0;border-radius:var(--r-input);
+  padding:10px 16px;font-weight:600;cursor:pointer;box-shadow:var(--shadow-key);
+  transition:transform .08s ease,background-color .12s ease;
+}
+.btn:hover{background:var(--blue-deep)}
+.btn:active{transform:translateY(1px)}
+.btn-quiet{
+  background:var(--surface);color:var(--ink);border:1px solid var(--rule-2);
+  border-radius:var(--r-input);padding:9px 14px;cursor:pointer;
+  transition:background-color .12s ease,border-color .12s ease;
+}
+.btn-quiet:hover{background:var(--paper-2);border-color:var(--blue)}
+.btn-mini{
+  background:var(--surface);border:1px solid var(--rule-2);border-radius:6px;
+  padding:2px 8px;font-size:12px;cursor:pointer;color:var(--ink-2)
+}
+.btn-mini:hover{border-color:var(--blue);color:var(--blue-deep)}
+.btn-link{background:none;border:0;color:var(--blue);padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+
+.stat{font-size:12.5px;color:var(--muted)}
+.stat b{color:var(--ink);font-size:14px}
+label.inline{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+input[type=number]{font:inherit;padding:6px 8px;border:1px solid var(--rule-2);border-radius:6px;width:64px}
+
+.panel{
+  background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-card);
+  overflow:auto;max-height:58vh;box-shadow:var(--shadow-card)
+}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+th{background:var(--paper-2);font-weight:600;color:var(--ink-2);position:sticky;top:0;z-index:1;white-space:nowrap}
+tbody tr:hover{background:var(--paper)}
+td select{max-width:330px}
+
+.pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;background:var(--paper-2);color:var(--ink-2)}
+.pill.ok{background:var(--ok-wash);color:var(--ok)}
+.pill.bad{background:var(--bad-wash);color:var(--bad)}
+.pill.warn{background:var(--yellow-wash);color:var(--yellow-deep)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:14px}
+.fld{display:flex;flex-direction:column;gap:5px;font-size:12.5px;color:var(--ink-2);min-width:0}
+.fld input,.fld select{
+  width:100%;font:inherit;padding:9px 10px;border:1px solid var(--rule-2);
+  border-radius:var(--r-input);background:var(--surface);color:var(--ink);
+  transition:border-color .12s ease,box-shadow .12s ease;
+}
+.fld input:focus,.fld select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-wash);outline:none}
+.wide{grid-column:1/-1}
+
+.banner{
+  background:var(--yellow-wash);border:1px solid var(--yellow);
+  border-radius:var(--r-card);padding:12px 14px;font-size:13px;color:var(--ink-2);margin-bottom:16px
+}
+.banner b{color:var(--ink)}
+
+@media (max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);padding:14px}
+  .rail nav{flex-direction:row;overflow:auto;margin-top:12px}
+  .rail nav button{border-left:0;border-bottom:3px solid transparent;white-space:nowrap}
+  .rail nav button.active{border-left:0;border-bottom-color:var(--yellow)}
+  .rail .filters{flex-direction:row;flex-wrap:wrap;margin-top:12px}
+  .rail .filters .fld{flex:1 1 140px}
+  .rail-foot{display:none}
+  .main{padding:18px 16px 60px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none !important;animation:none !important}
+}
+</style>
+</head>
+<body>
+<div class="pintu" id="pintu">
+  <form class="pintu-kad" id="borang-masuk" autocomplete="on">
+    <div class="brand">
+      <span class="brand-mark">IPDA</span>
+      <span class="brand-text">
+        <span class="brand-name">Unit Praktikum</span>
+        <span class="brand-sub">Akses kakitangan sahaja</span>
+      </span>
+    </div>
+    <label class="fld">ID pengguna
+      <input id="id-pengguna" type="text" autocomplete="username" required>
+    </label>
+    <label class="fld">Kata laluan
+      <input id="kata-laluan" type="password" autocomplete="current-password" required>
+    </label>
+    <button class="btn" type="submit" id="btn-masuk">Masuk</button>
+    <p class="err" id="ralat-masuk"></p>
+  </form>
+</div>
+
+<div class="shell" id="shell" hidden>
+  <aside class="rail">
+    <div class="brand">
+      <span class="brand-mark">IPDA</span>
+      <span class="brand-text">
+        <span class="brand-name">Penempatan Praktikum</span>
+        <span class="brand-sub">Kubang Pasu &amp; Kota Setar</span>
+      </span>
+    </div>
+    <nav>
+      <button data-tab="sekolah" class="active">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 4l9 6.5"/><path d="M5 10v9h14v-9"/><path d="M9.5 19v-5h5v5"/></svg>
+        Sekolah <span class="count" id="cnt-sekolah">0</span>
+      </button>
+      <button data-tab="pelajar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6"/></svg>
+        Pelajar <span class="count" id="cnt-pelajar">0</span>
+      </button>
+      <button data-tab="penetapan">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h7"/><path d="m16 16 2.5 3L22 13"/></svg>
+        Penetapan
+      </button>
+      <button data-tab="permintaan">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v12H4z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
+        Permintaan <span class="count" id="cnt-permintaan">0</span>
+      </button>
+      <button data-tab="laporan">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M7 19V9"/><path d="M12 19V5"/><path d="M17 19v-7"/></svg>
+        Laporan
+      </button>
+    </nav>
+    <div class="filters">
+      <label class="fld">Daerah <select id="filter-daerah"><option value="">Semua daerah</option></select></label>
+      <label class="fld">Kohort <select id="filter-kohort"><option value="">Semua kohort</option></select></label>
+      <label class="fld">Opsyen <select id="filter-opsyen"><option value="">Semua opsyen</option></select></label>
+      <label class="fld">Komponen <select id="filter-komponen"><option value="">Semua komponen</option></select></label>
+    </div>
+    <div class="rail-foot">
+      IPG Kampus Darulaman<br>
+      Data sekolah: KPM, Januari 2020
+      <div style="margin-top:10px"><button class="btn-mini" id="btn-keluar">Log keluar</button></div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- SEKOLAH -->
+    <section id="tab-sekolah" class="view active">
+      <div class="view-head">
+        <div>
+          <h1>Sekolah</h1>
+          <p>Senarai sekolah rendah di kedua-dua daerah, lengkap dengan kod KPM dan koordinat untuk pengiraan jarak.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <button class="btn-quiet" id="btn-import-sekolah">Import CSV sekolah</button>
+          <input type="file" id="file-sekolah" accept=".csv" hidden>
+          <button class="btn-quiet" id="btn-contoh-sekolah">Muat senarai sekolah</button>
+          <button class="btn-quiet" id="btn-status">Muat turun status untuk borang pelajar</button>
+          <span class="spacer"></span>
+          <span class="stat" id="stat-sekolah"></span>
+        </div>
+        <p class="help">Kolum: <span class="mono">kod,nama,jenis,alamat,poskod,bandar,telefon,lokasi,murid,guru,prasekolah,integrasi,longitud,latitud,ppd</span></p>
+      </div>
+      <div class="panel">
+        <table id="tbl-sekolah"><thead><tr>
+          <th>Kod</th><th>Nama</th><th>Jenis</th><th>Bandar</th><th>PPD</th><th>Murid</th><th>Kuota/opsyen</th><th>Opsyen diterima</th><th>Koordinat</th><th>Ditempatkan</th><th>Pilihan</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- PELAJAR -->
+    <section id="tab-pelajar" class="view">
+      <div class="view-head">
+        <div>
+          <h1>Pelajar</h1>
+          <p>130 pelajar PISMP 2022 daripada senarai pensyarah penyelia. Pelajar log masuk ke borang dengan no. kad pengenalan untuk memilih sekolah.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <button class="btn" id="btn-contoh-pelajar">Segerak data pelajar dari pangkalan data</button>
+          <button class="btn-quiet" id="btn-geocode">Geokod alamat kosong</button>
+          <span class="badge" id="status-segerak">—</span>
+          <span class="spacer"></span>
+          <label class="inline">Slot setiap <input type="number" id="kuota" min="50" max="1000" step="10" value="200"> murid</label>
+          <label class="inline">Min <input type="number" id="kuota-min" min="1" max="50" value="1"></label>
+          <label class="inline">Maks <input type="number" id="kuota-max" min="1" max="600" value="4"></label>
+          <button class="btn-quiet" id="btn-reset">Kosongkan semua</button>
+        </div>
+        <p class="help">Pilihan dan alamat yang pelajar hantar melalui portal <b>terus masuk ke pangkalan data</b>. Butang segerak hanya membaca semula data itu — tiada muat naik CSV diperlukan. Halaman ini juga menyegerak sendiri setiap 60 saat.</p>
+        <p class="help" id="geocode-status"></p>
+      </div>
+
+      <details class="card" style="cursor:pointer">
+        <summary style="font-weight:600">Langkah awal sahaja — muat naik senarai pelajar asas (CSV)</summary>
+        <p class="help" style="margin-top:10px">Gunakan sekali sahaja semasa mula, atau apabila ada pelajar baharu. Selepas itu jangan muat naik lagi — muat naik akan menimpa pilihan yang pelajar sudah hantar.</p>
+        <div class="row">
+          <button class="btn-quiet" id="btn-import-pelajar">Import CSV pelajar</button>
+          <input type="file" id="file-pelajar" accept=".csv" hidden>
+        </div>
+        <p class="help">Kolum CSV: <span class="mono">nama,no_kad_pengenalan,no_angka_giliran,no_matrik,program,kohort,opsyen,komponen,kod_kursus,alamat,latitud,longitud,pilihan1,pilihan2,pilihan3,kapasiti,rakan</span></p>
+      </details>
+
+      <div class="card">
+        <h2 id="tajuk-borang">Tambah pelajar dengan alamat dummy</h2>
+        <div class="grid">
+          <label class="fld">Nama penuh <input type="text" id="f-nama" placeholder="Nur Aisyah binti Rahman"></label>
+          <label class="fld">No. kad pengenalan <input type="text" id="f-ic" placeholder="060101221234" maxlength="14"></label>
+          <label class="fld">No. matrik <input type="text" id="f-matrik" placeholder="2023123456"></label>
+          <label class="fld">Program <select id="f-program"><option>PISMP</option><option>PDPP</option></select></label>
+          <label class="fld">Opsyen <input type="text" id="f-opsyen" list="senarai-opsyen" placeholder="Matematik"></label>
+          <label class="fld">Komponen <select id="f-komponen"></select></label>
+          <label class="fld wide">Alamat kediaman (dummy dibenarkan) <input type="text" id="f-alamat" placeholder="Taman Bersatu, Jitra"></label>
+          <label class="fld">Latitud <input type="text" id="f-lat" placeholder="6.2645"></label>
+          <label class="fld">Longitud <input type="text" id="f-lon" placeholder="100.4200"></label>
+          <label class="fld">Pilihan sekolah 1 <select id="f-p1"></select></label>
+          <label class="fld">Pilihan sekolah 2 <select id="f-p2"></select></label>
+          <label class="fld">Pilihan sekolah 3 <select id="f-p3"></select></label>
+          <label class="fld">Kapasiti kenderaan <input type="number" id="f-kapasiti" min="0" max="4" value="0"></label>
+          <label class="fld wide">Rakan kongsi kenderaan (no. KP atau no. matrik, pisah dengan titik bertindih) <input type="text" id="f-rakan" placeholder="060202221234;2023123458"></label>
+        </div>
+        <div class="row" style="margin-top:14px">
+          <button class="btn" id="btn-simpan-pelajar">Simpan pelajar</button>
+          <button class="btn-quiet" id="btn-geokod-borang">Geokod alamat ini</button>
+          <button class="btn-quiet" id="btn-borang-baru">Kosongkan borang</button>
+          <span class="spacer"></span>
+          <a class="btn-quiet" href="borang.html" target="_blank" rel="noopener" style="text-decoration:none">Buka borang pelajar</a>
+        </div>
+        <p class="help" id="status-borang"></p>
+      </div>
+
+      <div class="panel">
+        <table id="tbl-pelajar"><thead><tr>
+          <th>Nama</th><th>No. kad pengenalan</th><th>Angka giliran</th><th>Program</th><th>Opsyen</th><th>Komponen</th><th>Alamat</th><th>Pilihan</th><th>Kenderaan</th><th>Rakan</th><th></th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- PENETAPAN -->
+    <section id="tab-penetapan" class="view">
+      <div class="view-head">
+        <div>
+          <h1>Penetapan</h1>
+          <p>Kumpulan kongsi kenderaan cuba sekolah pilihan bersama. Kuota dua pelajar setiap opsyen, dan tiada pelajar kembali ke sekolah yang sama pada komponen lain.</p>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Tetingkap penghantaran</h2>
+        <p class="help">Buka hanya komponen yang dibenarkan memilih. Pelajar dalam komponen yang ditutup tidak boleh menyimpan pilihan, walaupun mereka log masuk.</p>
+        <div id="senarai-tetingkap" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <button class="btn" id="btn-jalan">Jalankan penetapan</button>
+          <button class="btn-quiet" id="btn-clear-penempatan">Kosongkan penempatan</button>
+          <span class="spacer"></span>
+          <span class="stat" id="stat-penetapan"></span>
+        </div>
+        <p class="err" id="penetapan-err"></p>
+        <p class="help">Keutamaan penetapan: <b>1)</b> permintaan sekolah (opsyen yang diminta sahaja) → <b>2)</b> permintaan pelajar (pilihan 1, 2, 3) → <b>3)</b> kekalkan kumpulan kongsi kenderaan bersama → <b>4)</b> sekolah terdekat. Sekolah yang tidak menghantar permintaan menerima baki pelajar secara rawak.</p>
+      </div>
+      <div class="card">
+        <div class="row">
+          <button class="btn-quiet" id="btn-arkib">Arkibkan penempatan ke sejarah</button>
+          <button class="btn-quiet" id="btn-kosong-sejarah">Kosongkan sejarah</button>
+          <span class="spacer"></span>
+          <span class="stat" id="stat-sejarah"></span>
+        </div>
+        <p class="help">Arkibkan selepas setiap sesi tamat supaya pelajar yang sama tidak kembali ke sekolah yang sama pada komponen berikutnya.</p>
+      </div>
+      <div class="panel">
+        <table id="tbl-penetapan"><thead><tr>
+          <th>Pelajar</th><th>Matrik dan kad pengenalan</th><th>Opsyen</th><th>Komponen</th><th>Kumpulan</th><th>Sekolah</th><th>Jarak</th><th>Status</th><th>Tukar sekolah</th>
+        </tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+
+    <!-- LAPORAN -->
+    <section id="tab-permintaan" class="view">
+      <div class="view-head">
+        <div>
+          <h1>Permintaan sekolah</h1>
+          <p>Sekolah menghantar keperluan pelajar mengikut opsyen melalui portal sekolah. Penempatan mengikut permintaan ini; sekolah yang tidak menghantar permintaan menerima pelajar secara rawak.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <button class="btn" id="btn-muat-permintaan">Muat semula permintaan</button>
+          <span class="spacer"></span>
+          <span class="stat" id="stat-permintaan"></span>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Had pelajar setiap opsyen di satu sekolah</h2>
+        <p class="hint">Kuota sebenar = nilai terkecil antara had opsyen, formula murid, dan permintaan sekolah.</p>
+        <div class="grid" id="grid-had-opsyen"></div>
+        <div class="row">
+          <button class="btn-quiet" id="btn-simpan-had">Simpan had opsyen</button>
+          <span class="msg" id="msg-had"></span>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Laras pukal</h2>
+        <p class="hint">Ubah ramai permintaan serentak. <b>Laras</b> pada jadual di bawah hanya mengubah satu sekolah, satu opsyen.</p>
+        <div class="grid">
+          <label class="fld">Daerah
+            <select id="pukal-ppd"><option value="">Semua daerah</option>
+              <option value="PPD KUBANG PASU">PPD Kubang Pasu</option>
+              <option value="PPD KOTA SETAR">PPD Kota Setar</option>
+              <option value="PPD PADANG TERAP">PPD Padang Terap</option>
+            </select>
+          </label>
+          <label class="fld">Komponen
+            <select id="pukal-komponen"><option value="">Semua komponen</option></select>
+          </label>
+          <label class="fld">Operasi
+            <select id="pukal-operasi">
+              <option value="min">Naikkan ke minimum</option>
+              <option value="maks">Hadkan ke maksimum</option>
+              <option value="peratus">Ubah ikut peratus</option>
+              <option value="set">Tetapkan nilai sama</option>
+            </select>
+          </label>
+          <label class="fld">Nilai <span id="pukal-unit" style="color:var(--muted)">(bilangan)</span>
+            <input id="pukal-nilai" type="number" value="2" step="1">
+          </label>
+        </div>
+        <div class="row">
+          <button class="btn" id="btn-laras-pukal">Jalankan laras pukal</button>
+          <span class="msg" id="msg-pukal"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Permintaan dihantar</h2>
+        <div class="panel" style="max-height:46vh">
+          <table id="tbl-permintaan"><thead><tr>
+            <th>Sekolah</th><th>Komponen</th><th>Permintaan opsyen</th><th>Pegawai / telefon</th><th>Dihantar</th><th></th>
+          </tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Sekolah belum menghantar permintaan</h2>
+        <p class="hint" id="hint-belum">—</p>
+      </div>
+    </section>
+
+    <section id="tab-laporan" class="view">
+      <div class="view-head">
+        <div>
+          <h1>Laporan</h1>
+          <p>Ringkasan penempatan mengikut sekolah dan status setiap kumpulan kongsi kenderaan.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <button class="btn" id="btn-export">Muat turun CSV penempatan</button>
+          <span class="spacer"></span>
+          <span class="stat" id="stat-laporan"></span>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Mengikut sekolah</h2>
+        <div class="panel" style="max-height:34vh">
+          <table id="tbl-ringkas"><thead><tr>
+            <th>Sekolah</th><th>Jumlah</th><th>Komponen dan opsyen</th><th>Jarak purata</th>
+          </tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Kumpulan kongsi kenderaan</h2>
+        <div class="panel" style="max-height:34vh">
+          <table id="tbl-kumpulan"><thead><tr>
+            <th>Kumpulan</th><th>Komponen</th><th>Ahli</th><th>Pemandu</th><th>Sekolah</th><th>Status</th>
+          </tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<datalist id="senarai-opsyen">
+  <option>Bahasa Melayu</option><option>Bahasa Inggeris (TESL)</option><option>Matematik</option>
+  <option>Sains</option><option>Pendidikan Islam</option><option>Pendidikan Khas</option><option>Prasekolah</option>
+</datalist>
+
+<script src="config.js"></script>
+<script>
+
+"use strict";
+const KEY = "praktikum.penempatan.v4";
+const state = { sekolah: [], pelajar: [], sejarah: [], sekat: [], tetingkap: {}, kuota: 2,
+                permintaan: {}, hadOpsyen: {} };
+const SLOT = { muridPerSlot: 200, min: 1, max: 4 };   // kuota = murid/200, dihadkan 1–4 setiap opsyen
+const KOMPONEN = ["PBS 1","PBS 2","Praktikum Fasa 1","Praktikum Fasa 2/Internship"];
+const KOD = {"PBS 1":"PRKA3151","PBS 2":"PRKA3171","Praktikum Fasa 1":"PRKA3195",
+             "Praktikum Fasa 2/Internship":"PRKA3245/PRKA3272","Praktikum (PDPP)":"PRKA2045"};
+let suntingId = null;   // id pelajar yang sedang disunting dalam borang
+
+/* ---------- simpanan ---------- */
+function simpan(){ localStorage.setItem(KEY, JSON.stringify({sekolah:state.sekolah, pelajar:state.pelajar, sejarah:state.sejarah, sekat:state.sekat, tetingkap:state.tetingkap, kuota:state.kuota, permintaan:state.permintaan, hadOpsyen:state.hadOpsyen})); }
+function muat(){
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if(Array.isArray(d.sekolah)) state.sekolah = d.sekolah;
+    if(Array.isArray(d.pelajar)) state.pelajar = d.pelajar;
+    if(Array.isArray(d.sejarah)) state.sejarah = d.sejarah;
+    if(Array.isArray(d.sekat)) state.sekat = d.sekat;
+    if(d.tetingkap && typeof d.tetingkap === "object") state.tetingkap = d.tetingkap;
+    if(d.kuota) state.kuota = d.kuota;
+    if(d.permintaan && typeof d.permintaan === "object") state.permintaan = d.permintaan;
+    if(d.hadOpsyen && typeof d.hadOpsyen === "object") state.hadOpsyen = d.hadOpsyen;
+  }catch(e){ /* data rosak — mula kosong */ }
+}
+function disekat(kod){ return state.sekat.includes(kod); }
+/* SJKC hanya untuk opsyen Bahasa Cina, SJKT hanya untuk Bahasa Tamil */
+function jenisSekolah(kod){
+  const s=state.sekolah.find(x=>x.kod===kod);
+  return s?String(s.jenis||"").toUpperCase():"";
+}
+function opsyenDibenarkan(kod){
+  const j=jenisSekolah(kod);
+  if(j.indexOf("SJKC")>=0) return ["Cina"];
+  if(j.indexOf("SJKT")>=0) return ["Tamil"];
+  return null;               // SK / SK KHAS: semua opsyen
+}
+function opsyenLayak(p, kod){
+  const dibenar=opsyenDibenarkan(kod);
+  if(!dibenar) return true;
+  const o=String(p.opsyen||"").toLowerCase();
+  return dibenar.some(x=>o.indexOf(x.toLowerCase())>=0);
+}
+/* kapasiti maksimum sesebuah komponen: semua sekolah × semua opsyen yang terlibat */
+function kapasitiKomponen(k){
+  const opsyen=[...new Set(state.pelajar.filter(p=>p.komponen===k).map(p=>p.opsyen))];
+  if(!opsyen.length) return 0;
+  return state.sekolah.reduce((a,s)=>a+kuotaSekolah(s.kod)*opsyen.length,0);
+}
+/* kuota setiap opsyen bergantung pada bilangan murid sekolah */
+function kuotaSekolah(kod){
+  const s=state.sekolah.find(x=>x.kod===kod);
+  const murid=(s && s.murid) || 0;
+  const kira=Math.round(murid/(SLOT.muridPerSlot||200));
+  return Math.max(SLOT.min, Math.min(SLOT.max, kira || SLOT.min));
+}
+/* had pelajar bagi satu opsyen di satu sekolah — lalai 2, boleh diubah admin */
+const HAD_LALAI=2;
+function hadOpsyen(opsyen){
+  const n=Number((state.hadOpsyen||{})[opsyen]);
+  return Number.isFinite(n) && n>0 ? n : HAD_LALAI;
+}
+/* permintaan sekolah bagi (komponen, opsyen); null = sekolah tidak menghantar permintaan */
+function permintaanKuota(kod, opsyen, komponen){
+  const r=(state.permintaan||{})[kod];
+  if(!r || !r.komponen) return null;
+  const k=r.komponen[komponen];
+  if(!k) return null;
+  const n=Number((k.opsyen||{})[opsyen]);
+  return Number.isFinite(n) ? n : 0;
+}
+function adaPermintaan(kod, komponen){
+  const r=(state.permintaan||{})[kod];
+  return !!(r && r.komponen && r.komponen[komponen]);
+}
+/* kuota sebenar = min(had opsyen, formula murid, permintaan sekolah) */
+function kuotaSel(kod, opsyen, komponen){
+  const asas=Math.min(hadOpsyen(opsyen), kuotaSekolah(kod));
+  const pm=permintaanKuota(kod, opsyen, komponen);
+  return pm==null ? asas : Math.min(asas, pm);
+}
+
+/* ---------- utiliti ---------- */
+function jarakKm(a,b){
+  if(!a || !b || a.lat==null || b.lat==null || a.lon==null || b.lon==null) return null;
+  const R=6371, r=x=>x*Math.PI/180;
+  const dLat=r(b.lat-a.lat), dLon=r(b.lon-a.lon);
+  const h=Math.sin(dLat/2)**2 + Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function num(v){ const n=parseFloat(String(v).replace(",",".")); return Number.isFinite(n)?n:null; }
+function parseCSV(text){
+  const rows=[]; let row=[], cur="", q=false;
+  text = text.replace(/^\uFEFF/,"");
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){
+      if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; }
+      else cur+=c;
+    }else{
+      if(c==='"') q=true;
+      else if(c===","){ row.push(cur); cur=""; }
+      else if(c==="\n"){ row.push(cur); rows.push(row); row=[]; cur=""; }
+      else if(c==="\r"){ /* abaikan */ }
+      else cur+=c;
+    }
+  }
+  if(cur.length || row.length){ row.push(cur); rows.push(row); }
+  return rows.filter(r=>r.some(v=>String(v).trim()!==""));
+}
+function senaraiRakan(v){
+  if(Array.isArray(v)) return v.filter(Boolean);
+  return String(v||"").split(/[;|,]/).map(s=>s.trim()).filter(Boolean);
+}
+function pilihan(p){ return (p.pilihan||[]).filter(Boolean); }
+
+/* ---------- import ---------- */
+function importSekolah(rows){
+  const h=rows[0].map(x=>x.trim().toLowerCase());
+  const idx=n=>h.indexOf(n);
+  const i={kod:idx("kod"),nama:idx("nama"),jenis:idx("jenis"),bandar:idx("bandar"),
+           murid:idx("murid"),lon:idx("longitud"),lat:idx("latitud"),ppd:idx("ppd")};
+  if(i.nama<0||i.lat<0||i.lon<0) throw new Error("CSV sekolah mesti ada kolum nama, latitud, longitud.");
+  const out=[];
+  for(const r of rows.slice(1)){
+    const lat=num(r[i.lat]), lon=num(r[i.lon]);
+    if(!r[i.nama]||lat==null||lon==null) continue;
+    out.push({kod:(i.kod>=0?r[i.kod]:"").trim(), nama:r[i.nama].trim(),
+      jenis:(i.jenis>=0?r[i.jenis]:"").trim(), bandar:(i.bandar>=0?r[i.bandar]:"").trim(),
+      pd:(i.ppd>=0?r[i.ppd]:"").trim(), murid:(i.murid>=0?num(r[i.murid]):null), lat, lon});
+  }
+  if(!out.length) throw new Error("Tiada baris sekolah sah ditemui.");
+  state.sekolah=out; simpan(); render();
+}
+function importPelajar(rows){
+  const h=rows[0].map(x=>x.trim().toLowerCase());
+  const idx=n=>h.indexOf(n);
+  const i={nama:idx("nama"),matrik:idx("no_matrik"),ic:idx("no_kad_pengenalan"),angka:idx("no_angka_giliran"),
+           program:idx("program"),kohort:idx("kohort"),
+           opsyen:idx("opsyen"),komponen:idx("komponen"),
+           kod:idx("kod_kursus"),alamat:idx("alamat"),lat:idx("latitud"),lon:idx("longitud"),
+           p1:idx("pilihan1"),p2:idx("pilihan2"),p3:idx("pilihan3"),
+           kap:idx("kapasiti"),rakan:idx("rakan")};
+  if(i.nama<0||i.opsyen<0) throw new Error("CSV pelajar mesti ada kolum nama dan opsyen.");
+  const out=[];
+  for(const r of rows.slice(1)){
+    if(!r[i.nama]) continue;
+    const komponen=(i.komponen>=0?r[i.komponen]:"").trim();
+    out.push({
+      id:"p"+out.length+"_"+Date.now(), nama:r[i.nama].trim(),
+      matrik:(i.matrik>=0?r[i.matrik]:"").trim(),
+      angka:(i.angka>=0?r[i.angka]:"").trim(),
+      ic:(i.ic>=0?String(r[i.ic]||"").replace(/[^0-9]/g,""):""),
+      program:(i.program>=0?r[i.program]:"").trim(), kohort:(i.kohort>=0?r[i.kohort]:"").trim(),
+      opsyen:r[i.opsyen].trim(),
+      komponen, kod:((i.kod>=0?r[i.kod]:"").trim() || KOD[komponen] || ""),
+      alamat:(i.alamat>=0?r[i.alamat]:"").trim(),
+      lat:(i.lat>=0?num(r[i.lat]):null), lon:(i.lon>=0?num(r[i.lon]):null),
+      pilihan:[(i.p1>=0?r[i.p1]:"").trim(), (i.p2>=0?r[i.p2]:"").trim(), (i.p3>=0?r[i.p3]:"").trim()].filter(Boolean),
+      kapasiti:(i.kap>=0? (num(r[i.kap])||0) : 0),
+      rakan:(i.rakan>=0? senaraiRakan(r[i.rakan]) : []),
+      sekolah:null, jarak:null, manual:false, kumpulan:"", status:""
+    });
+  }
+  if(!out.length) throw new Error("Tiada baris pelajar sah ditemui.");
+  state.pelajar=out; simpan(); render();
+}
+
+/* ---------- kumpulan kongsi kenderaan ---------- */
+function kumpulanKenderaan(){
+  const ikut=new Map();
+  for(const p of state.pelajar){
+    if(p.matrik) ikut.set((p.komponen||"")+"|"+p.matrik, p);
+    if(p.ic) ikut.set((p.komponen||"")+"|"+p.ic, p);     // pelajar boleh disenaraikan ikut IC
+  }
+  const jiran=new Map(state.pelajar.map(p=>[p.id,new Set()]));
+  for(const p of state.pelajar){
+    for(const m of p.rakan){
+      if(!m || m===p.matrik || m===p.ic) continue;
+      const q=ikut.get((p.komponen||"")+"|"+m);
+      // dua hala wajib (boleh guna no. matrik atau no. kad pengenalan)
+      if(q && (q.rakan.includes(p.matrik) || q.rakan.includes(p.ic))){
+        jiran.get(p.id).add(q.id); jiran.get(q.id).add(p.id);
+      }
+    }
+  }
+  const dilawat=new Set(), keluar=[];
+  for(const mula of state.pelajar){
+    if(dilawat.has(mula.id)) continue;
+    const tindanan=[mula], ahli=[];
+    dilawat.add(mula.id);
+    while(tindanan.length){
+      const x=tindanan.pop(); ahli.push(x);
+      for(const y of jiran.get(x.id)){
+        if(dilawat.has(y)) continue;
+        dilawat.add(y); tindanan.push(state.pelajar.find(z=>z.id===y));
+      }
+    }
+    const perlu=ahli.length-1;
+    const pemandu=ahli.filter(p=>p.kapasiti>0).sort((a,b)=>b.kapasiti-a.kapasiti)
+                      .find(p=>p.kapasiti>=perlu) || null;
+    keluar.push({ahli, pemandu, label:"K"+(keluar.length+1),
+                 cukup: ahli.length===1 || !!pemandu});
+  }
+  return keluar;
+}
+function rujukanJarak(g){
+  if(g.pemandu) return {lat:g.pemandu.lat, lon:g.pemandu.lon};
+  const sah=g.ahli.filter(p=>p.lat!=null);
+  if(!sah.length) return null;
+  return {lat: sah.reduce((a,p)=>a+p.lat,0)/sah.length, lon: sah.reduce((a,p)=>a+p.lon,0)/sah.length};
+}
+function kunci(p, kodSekolah){ return kodSekolah+"||"+p.opsyen+"||"+(p.komponen||""); }
+function kiraBeban(){
+  const beban={};
+  for(const p of state.pelajar){ if(!p.sekolah) continue; const k=kunci(p,p.sekolah); beban[k]=(beban[k]||0)+1; }
+  return beban;
+}
+function calon(p){
+  if(p.lat==null || p.lon==null) return [];
+  return state.sekolah.filter(s=>!disekat(s.kod) && opsyenLayak(p,s.kod))
+    .map(s=>({s, km:jarakKm({lat:p.lat,lon:p.lon}, s)}))
+    .filter(x=>x.km!=null).sort((a,b)=>a.km-b.km);
+}
+function sekolahTerlarang(p){
+  const set=new Set();
+  for(const q of state.pelajar){
+    if(q.id!==p.id && p.matrik && q.matrik===p.matrik && q.komponen!==p.komponen && q.sekolah) set.add(q.sekolah);
+  }
+  for(const s of state.sejarah){
+    if(p.matrik && s.matrik===p.matrik && s.komponen!==p.komponen) set.add(s.sekolah);
+  }
+  return set;
+}
+function bolehKumpulan(g, kod, beban, fasa){
+  if(disekat(kod)) return false;
+  if(!g.ahli.every(p=>opsyenLayak(p,kod))) return false;   // SJKC/SJKT terhad kepada opsyen tertentu
+  const ada=adaPermintaan(kod, g.ahli[0].komponen);
+  if(fasa==="permintaan" && !ada) return false;            // pas permintaan: sekolah yang meminta sahaja
+  if(fasa==="rawak" && ada) return false;                  // pas rawak: sekolah tanpa permintaan sahaja
+  const tally={};
+  for(const p of g.ahli){
+    if(sekolahTerlarang(p).has(kod)) return false;
+    const k=kunci(p,kod);
+    const n=(beban[k]||0)+(tally[k]||0);
+    if(n>=kuotaSel(kod, p.opsyen, p.komponen)) return false;   // had opsyen + permintaan sekolah
+    tally[k]=(tally[k]||0)+1;
+  }
+  return true;
+}
+/* Keutamaan: (1) permintaan sekolah — penapis dalam bolehKumpulan,
+   (2) permintaan pelajar (pilihan 1→3), (3) kekuatan kumpulan, (4) jarak */
+function calonPilihan(g){
+  const set=new Set();
+  g.ahli.forEach(p=>pilihan(p).forEach(k=>set.add(k)));
+  const ref=rujukanJarak(g);
+  return [...set].map(kod=>{
+    const s=state.sekolah.find(x=>x.kod===kod);
+    if(!s || disekat(kod)) return null;
+    let rank=9, cakup=0;
+    for(const p of g.ahli){
+      const i=pilihan(p).indexOf(kod);
+      const r=(i<0?9:i+1);
+      if(r<rank) rank=r;          // keutamaan terbaik dalam kumpulan
+      if(i>=0) cakup++;
+    }
+    const km=jarakKm(ref,s);
+    return {s, kod, rank, cakup, km: km==null?99:km};
+  }).filter(Boolean)
+    .sort((a,b)=> a.rank-b.rank || b.cakup-a.cakup || a.km-b.km);
+}
+function calonSemua(g){
+  const ref=rujukanJarak(g);
+  return state.sekolah.filter(s=>!disekat(s.kod)).map(s=>({s, kod:s.kod, km:jarakKm(ref,s)||99}))
+    .sort((a,b)=>a.km-b.km);
+}
+
+/* ---------- penetapan ---------- */
+function tetapkanAuto(){
+  const err=document.getElementById("penetapan-err");
+  err.textContent="";
+  if(!state.sekolah.length) return err.textContent="Muat data sekolah dahulu.";
+  if(!state.pelajar.length) return err.textContent="Muat data pelajar dahulu.";
+  const tanpa=state.pelajar.filter(p=>p.lat==null||p.lon==null);
+  if(tanpa.length) return err.textContent=tanpa.length+" pelajar tiada koordinat. Geokod alamat mereka dahulu.";
+
+  for(const p of state.pelajar){ if(!p.manual){ p.sekolah=null; p.jarak=null; p.status=""; } }
+  const beban=kiraBeban();
+  const kumpulan=kumpulanKenderaan();
+
+  // urutan: komponen ikut buku, pelajar yang ADA pilihan dahulu,
+  // kemudian yang paling terhad pilihan (supaya permintaan pelajar dihormati)
+  const urutKomponen=k=>{ const i=KOMPONEN.indexOf(k); return i<0?99:i; };
+  kumpulan.sort((a,b)=>{
+    const ka=urutKomponen(a.ahli[0].komponen), kb=urutKomponen(b.ahli[0].komponen);
+    const pa=calonPilihan(a).length?0:1, pb=calonPilihan(b).length?0:1;
+    return ka-kb || pa-pb || calonPilihan(a).length-calonPilihan(b).length || a.label.localeCompare(b.label);
+  });
+
+  const gagal=[], pecah=[];
+  for(const g of kumpulan){
+    if(g.ahli.every(p=>p.manual)) continue;
+
+    if(!g.cukup){
+      // kapasiti kenderaan tidak mencukupi — tempatkan individu, tanda
+      pecah.push(g.label);
+      for(const p of g.ahli){ if(!p.manual) tempatIndividu(p, beban, "kapasiti", "permintaan"); }
+      continue;
+    }
+
+    let pilih=null, statusKumpulan="";
+    for(const c of calonPilihan(g)){
+      if(bolehKumpulan(g,c.kod,beban,"permintaan")){ pilih=c; statusKumpulan="ok"; break; }
+    }
+    if(!pilih){
+      for(const c of calonSemua(g)){
+        if(bolehKumpulan(g,c.kod,beban,"permintaan")){ pilih=c; statusKumpulan="luar"; break; }
+      }
+    }
+    if(!pilih){
+      // tiada sekolah yang boleh menampung seluruh kumpulan (kuota/opsyen) —
+      // pecahkan kumpulan, tempatkan setiap ahli mengikut pilihannya sendiri
+      pecah.push(g.label+" (kuota tidak cukup untuk "+g.ahli.length+" ahli)");
+      for(const p of g.ahli){ if(!p.manual) tempatIndividu(p, beban, "luar", "permintaan"); }
+      continue;
+    }
+    for(const p of g.ahli){
+      if(p.manual) continue;
+      p.sekolah=pilih.kod;
+      p.jarak=+jarakKm(p,pilih.s).toFixed(2);
+      // status per pelajar: OK hanya jika sekolah itu dalam senarai pilihannya sendiri
+      p.status = statusKumpulan==="luar" ? "luar"
+               : (pilihan(p).includes(pilih.kod) ? "ok" : "rakan");
+      p.kumpulan=g.label;
+      const k=kunci(p,pilih.kod);
+      beban[k]=(beban[k]||0)+1;
+    }
+  }
+  // pas 2: pelajar belum ditempatkan → sekolah TANPA permintaan, rawak tanpa mengikut opsyen
+  let rawak=0;
+  const acak=(arr)=>arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+  for(const p of acak(state.pelajar.filter(p=>!p.manual && !p.sekolah))){
+    for(const s of acak(state.sekolah)){
+      if(disekat(s.kod) || adaPermintaan(s.kod, p.komponen)) continue;
+      if(!opsyenLayak(p,s.kod)) continue;              // SJKC/SJKT kekal terhad kepada bahasa
+      if(sekolahTerlarang(p).has(s.kod)) continue;
+      const k=kunci(p,s.kod);
+      if((beban[k]||0) >= kuotaSel(s.kod, p.opsyen, p.komponen)) continue;
+      p.sekolah=s.kod; p.jarak=+jarakKm(p,s).toFixed(2); p.status="rawak";
+      beban[k]=(beban[k]||0)+1; rawak++; break;
+    }
+  }
+  simpan(); render();
+
+  const nota=[];
+  if(rawak) nota.push(rawak+" pelajar ditempatkan secara rawak di sekolah tanpa permintaan");
+  if(gagal.length) nota.push(gagal.length+" kumpulan tidak dapat ditempatkan: "+gagal.slice(0,5).join(", "));
+  if(pecah.length) nota.push(pecah.length+" kumpulan dipecahkan (kapasiti kenderaan tidak cukup): "+pecah.join(", "));
+  if(nota.length) err.textContent=nota.join(" · ");
+}
+function tempatIndividu(p, beban, sebab, fasa){
+  /* keutamaan: pilihan pelajar (1→3), kemudian sekolah terdekat */
+  const pilih=pilihan(p).map(kod=>state.sekolah.find(s=>s.kod===kod)).filter(Boolean);
+  const lain=state.sekolah
+    .filter(s=>!pilih.some(x=>x.kod===s.kod))
+    .map(s=>({s, km:jarakKm(p,s)||99}))
+    .sort((a,b)=>a.km-b.km)
+    .map(x=>x.s);
+  const calon=[...pilih, ...lain];
+  for(const s of calon){
+    if(disekat(s.kod)) continue;
+    if(!opsyenLayak(p,s.kod)) continue;
+    if(sekolahTerlarang(p).has(s.kod)) continue;
+    const ada=adaPermintaan(s.kod, p.komponen);
+    if(fasa==="permintaan" && !ada) continue;
+    if(fasa==="rawak" && ada) continue;
+    const k=kunci(p,s.kod);
+    if((beban[k]||0) < kuotaSel(s.kod, p.opsyen, p.komponen)){
+      p.sekolah=s.kod; p.jarak=+jarakKm(p,s).toFixed(2);
+      p.status = sebab==="kapasiti" ? "kapasiti" : "luar";
+      beban[k]=(beban[k]||0)+1;
+      return true;
+    }
+  }
+  p.sekolah=null; p.jarak=null; p.status="gagal";
+  return false;
+}
+function tukarSekolah(id, kod){
+  const p=state.pelajar.find(x=>x.id===id); if(!p) return;
+  if(!kod){ p.sekolah=null; p.jarak=null; p.manual=false; p.status=""; simpan(); render(); return; }
+  const s=state.sekolah.find(x=>x.kod===kod); if(!s) return;
+  if(!opsyenLayak(p,kod)){
+    alert("Ditolak: "+s.nama+" hanya menerima opsyen "+(opsyenDibenarkan(kod)||[]).join(", ")+". Opsyen anda: "+p.opsyen+".");
+    render(); return;
+  }
+  if(sekolahTerlarang(p).has(kod)){
+    alert("Ditolak: "+p.nama+" sudah ditempatkan di "+s.nama+" pada komponen lain. Pelajar yang sama tidak boleh kembali ke sekolah yang sama.");
+    render(); return;
+  }
+  const beban=kiraBeban();
+  const k=kunci(p,kod);
+  const kini=(beban[k]||0) - (p.sekolah===kod?1:0);
+  if(kini >= kuotaSel(kod,p.opsyen,p.komponen)){
+    alert("Kuota penuh: "+s.nama+" hanya boleh menerima "+kuotaSel(kod,p.opsyen,p.komponen)+" pelajar opsyen "+p.opsyen+" ("+s.murid+" murid, "+p.komponen+").");
+    render(); return;
+  }
+  p.sekolah=kod; p.manual=true; p.status="manual";
+  p.jarak=+jarakKm(p,s).toFixed(2);
+  const rakanSama=state.pelajar.filter(q=>q.id!==p.id && q.kumpulan && q.kumpulan===p.kumpulan && q.sekolah && q.sekolah!==kod);
+  if(rakanSama.length) alert("Perhatian: "+rakanSama.length+" rakan dalam kumpulan "+p.kumpulan+" kini di sekolah berbeza (kongsi kenderaan tidak lagi serentak).");
+  simpan(); render();
+}
+
+/* ---------- borang pelajar ---------- */
+function isiSenaraiSekolah(){
+  const opts = state.sekolah.map(s=>`<option value="${esc(s.kod)}">${esc(s.kod)} — ${esc(s.nama)}</option>`).join("");
+  for(const id of ["f-p1","f-p2","f-p3"]){
+    const sel=document.getElementById(id);
+    const lama=sel.value;
+    sel.innerHTML=`<option value="">— tiada —</option>`+opts;
+    if(lama) sel.value=lama;
+  }
+  const fk=document.getElementById("f-komponen");
+  if(!fk.options.length){
+    fk.innerHTML=KOMPONEN.map(k=>`<option>${esc(k)}</option>`).join("");
+  }
+}
+function kosongBorang(){
+  suntingId=null;
+  ["f-nama","f-matrik","f-opsyen","f-alamat","f-lat","f-lon","f-rakan"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("f-kapasiti").value=0;
+  ["f-p1","f-p2","f-p3"].forEach(id=>document.getElementById(id).value="");
+  document.getElementById("f-komponen").value=KOMPONEN[0];
+  document.getElementById("tajuk-borang").textContent="Tambah pelajar (alamat dummy)";
+  document.getElementById("status-borang").textContent="";
+}
+function simpanBorang(){
+  const st=document.getElementById("status-borang");
+  const nama=document.getElementById("f-nama").value.trim();
+  const ic=document.getElementById("f-ic").value.replace(/[^0-9]/g,"");
+  const program=document.getElementById("f-program").value;
+  const matrik=document.getElementById("f-matrik").value.trim();
+  const opsyen=document.getElementById("f-opsyen").value.trim();
+  const komponen=document.getElementById("f-komponen").value;
+  if(!nama||!opsyen) return st.textContent="Nama dan opsyen wajib diisi.";
+  const data={
+    nama, matrik, ic, program, opsyen, komponen, kod:KOD[komponen]||"",
+    alamat:document.getElementById("f-alamat").value.trim(),
+    lat:num(document.getElementById("f-lat").value), lon:num(document.getElementById("f-lon").value),
+    pilihan:[document.getElementById("f-p1").value, document.getElementById("f-p2").value,
+             document.getElementById("f-p3").value].filter(Boolean),
+    kapasiti:Math.max(0, Math.min(4, num(document.getElementById("f-kapasiti").value)||0)),
+    rakan:senaraiRakan(document.getElementById("f-rakan").value)
+  };
+  if(data.lat==null||data.lon==null) return st.textContent="Sila geokod alamat atau isi latitud/longitud.";
+  if(suntingId){
+    const p=state.pelajar.find(x=>x.id===suntingId);
+    if(p) Object.assign(p, data, {manual:p.manual, sekolah:p.sekolah, status:p.status});
+    st.textContent="Pelajar dikemas kini.";
+  }else{
+    state.pelajar.push(Object.assign({id:"p"+state.pelajar.length+"_"+Date.now(), sekolah:null, jarak:null,
+      manual:false, kumpulan:"", status:""}, data));
+    st.textContent="Pelajar ditambah.";
+  }
+  simpan(); render(); kosongBorang(); st.textContent=st.textContent||"Disimpan.";
+}
+function suntingPelajar(id){
+  const p=state.pelajar.find(x=>x.id===id); if(!p) return;
+  suntingId=id;
+  document.getElementById("f-nama").value=p.nama||"";
+  document.getElementById("f-matrik").value=p.matrik||"";
+  document.getElementById("f-opsyen").value=p.opsyen||"";
+  document.getElementById("f-komponen").value=KOMPONEN.includes(p.komponen)?p.komponen:KOMPONEN[0];
+  document.getElementById("f-alamat").value=p.alamat||"";
+  document.getElementById("f-lat").value=p.lat??"";
+  document.getElementById("f-lon").value=p.lon??"";
+  document.getElementById("f-p1").value=pilihan(p)[0]||"";
+  document.getElementById("f-p2").value=pilihan(p)[1]||"";
+  document.getElementById("f-p3").value=pilihan(p)[2]||"";
+  document.getElementById("f-kapasiti").value=p.kapasiti||0;
+  document.getElementById("f-rakan").value=(p.rakan||[]).join(";");
+  document.getElementById("tajuk-borang").textContent="Sunting pelajar: "+p.nama;
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function hapusPelajar(id){
+  const p=state.pelajar.find(x=>x.id===id); if(!p) return;
+  if(!confirm("Padam pelajar "+p.nama+"?")) return;
+  state.pelajar=state.pelajar.filter(x=>x.id!==id);
+  simpan(); render();
+}
+
+/* ---------- permintaan sekolah & had opsyen ---------- */
+const OPSYEN_SENARAI=["Bahasa Melayu","Bahasa Inggeris (TESL)","Matematik","Sains","Pendidikan Islam",
+                      "Pendidikan Khas","Prasekolah","Pendidikan Seni Visual","Bahasa Cina","Bahasa Tamil"];
+function apiURL(){ return (window.KONFIG&&window.KONFIG.API_URL)||""; }
+const KUNCI_ADMIN=(window.KONFIG&&window.KONFIG.KUNCI)||"";
+function uaksi(a){ return apiURL()+"?aksi="+encodeURIComponent(a)+(KUNCI_ADMIN?"&kunci="+encodeURIComponent(KUNCI_ADMIN):""); }
+function uaksiLuar(a){ return (window.KONFIG&&window.KONFIG.API_URL||"")+"?aksi="+encodeURIComponent(a)+(KUNCI_ADMIN?"&kunci="+encodeURIComponent(KUNCI_ADMIN):""); }
+
+async function muatPermintaan(){
+  try{
+    const [p,t]=await Promise.all([
+      fetch(uaksi("permintaan"),{cache:"no-store"}).then(r=>r.json()),
+      fetch(uaksi("tetapan"),{cache:"no-store"}).then(r=>r.json()),
+    ]);
+    state.permintaan = (p&&typeof p==="object")?p:{};
+    state.hadOpsyen = (t&&t.hadOpsyen)||{};
+  }catch(e){ /* luar talian: kekalkan data sedia ada */ }
+  renderPermintaan(); renderHad();
+}
+function renderHad(){
+  const g=document.getElementById("grid-had-opsyen"); if(!g) return;
+  g.innerHTML=OPSYEN_SENARAI.map(o=>
+    `<label class="fld">${esc(o)}<input type="number" min="1" max="600" step="1" value="${hadOpsyen(o)}" data-had="${esc(o)}"></label>`).join("");
+}
+function renderPermintaan(){
+  const tb=document.querySelector("#tbl-permintaan tbody"); if(!tb) return;
+  const baris=[];
+  for(const kod of Object.keys(state.permintaan||{})){
+    const r=state.permintaan[kod];
+    for(const komp of Object.keys((r&&r.komponen)||{})){
+      const k=r.komponen[komp];
+      const teks=Object.entries(k.opsyen||{}).map(([o,n])=>esc(o)+" <b>"+n+"</b>").join(" · ")||"—";
+      baris.push(`<tr><td><b>${esc(kod)}</b><div class="muted" style="font-size:11.5px">${esc(r.nama||"")}</div></td>
+        <td>${esc(komp)}</td><td>${teks}</td>
+        <td>${esc(k.pic||"")}<div class="muted" style="font-size:11.5px">${esc(k.telefon||"")}</div></td>
+        <td style="font-size:12px">${k.dikemas?new Date(k.dikemas).toLocaleString("ms-MY"):""}${k.dilaras_admin?"<div class=\"muted\" style=\"font-size:11px\">dilaras admin</div>":""}</td>
+        <td><button class="btn-quiet btn-laras" data-kod="${esc(kod)}" data-komponen="${esc(komp)}">Laras</button></td></tr>`);
+    }
+  }
+  tb.innerHTML=baris.join("")||`<tr><td colspan="6" style="color:var(--muted)">Belum ada permintaan dihantar.</td></tr>`;
+  const bil=baris.length;
+  const cnt=document.getElementById("cnt-permintaan"); if(cnt) cnt.textContent=bil;
+  const stat=document.getElementById("stat-permintaan");
+  if(stat) stat.textContent=bil+" permintaan sekolah";
+  const belum=document.getElementById("hint-belum");
+  if(belum){
+    const sudah=new Set(Object.keys(state.permintaan||{}));
+    const senarai=state.sekolah.filter(s=>!sudah.has(s.kod));
+    belum.textContent = senarai.length
+      ? senarai.length+" daripada "+state.sekolah.length+" sekolah belum menghantar permintaan — pelajar yang tidak dapat ditempatkan mengikut permintaan akan diagihkan secara rawak ke sekolah-sekolah ini. Contoh: "+
+        senarai.slice(0,6).map(s=>s.nama).join(", ")
+      : "Semua sekolah telah menghantar permintaan.";
+  }
+  isiPukal();
+}
+async function simpanHad(){
+  const msg=document.getElementById("msg-had");
+  const had={};
+  document.querySelectorAll("#grid-had-opsyen input[data-had]").forEach(inp=>{
+    had[inp.dataset.had]=Math.max(1,Math.min(600,Math.round(Number(inp.value)||HAD_LALAI)));
+  });
+  try{
+    const r=await fetch(uaksi("tetapan_simpan"),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({hadOpsyen:had})}).then(x=>x.json());
+    if(r.ralat) throw new Error(r.ralat);
+    state.hadOpsyen=r.tetapan.hadOpsyen;
+    msg.className="msg ok"; msg.textContent="Had opsyen disimpan.";
+    render();
+  }catch(e){ msg.className="msg bad"; msg.textContent=e.message; }
+}
+async function larasPermintaan(kod, komponen){
+  const rekod=state.permintaan[kod]&&state.permintaan[kod].komponen[komponen];
+  if(!rekod) return;
+  const senarai=Object.keys(rekod.opsyen||{});
+  if(!senarai.length) return alert("Tiada opsyen dalam permintaan ini.");
+  const pilih=prompt("Opsyen untuk dilaras:\n"+senarai.map((o,i)=>(i+1)+". "+o+" ("+rekod.opsyen[o]+")").join("\n")+"\n\nMasukkan nombor pilihan:");
+  if(!pilih) return;
+  const opsyen=senarai[Number(pilih)-1];
+  if(!opsyen) return;
+  const nilai=prompt("Bilangan baharu untuk "+opsyen+" (sekarang "+rekod.opsyen[opsyen]+"):", String(rekod.opsyen[opsyen]));
+  if(nilai===null) return;
+  try{
+    const r=await fetch(uaksi("permintaan_set"),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({kod,komponen,opsyen,nilai:Number(nilai)})}).then(x=>x.json());
+    if(r.ralat) throw new Error(r.ralat);
+    state.permintaan[kod]=r.permintaan;
+    renderPermintaan(); render();
+  }catch(e){ alert("Gagal melaras: "+e.message); }
+}
+
+async function larasPukal(){
+  const msg=document.getElementById("msg-pukal");
+  const operasi=document.getElementById("pukal-operasi").value;
+  const nilai=Number(document.getElementById("pukal-nilai").value);
+  const ppd=document.getElementById("pukal-ppd").value;
+  const komponen=document.getElementById("pukal-komponen").value;
+  if(!Number.isFinite(nilai)){ msg.className="msg bad"; msg.textContent="Nilai tidak sah."; return; }
+  const label={min:"naikkan ke minimum",maks:"hadkan ke maksimum",peratus:"ubah ikut peratus",set:"tetapkan sama"}[operasi];
+  if(!confirm("Laras pukal: "+label+" "+nilai+(operasi==="peratus"?"%":"")+
+      "\nDaerah: "+(ppd||"semua")+"\nKomponen: "+(komponen||"semua")+"\n\nTeruskan?")) return;
+  try{
+    const r=await fetch(uaksi("permintaan_laras_pukal"),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({ppd,komponen,operasi,nilai})}).then(x=>x.json());
+    if(r.ralat) throw new Error(r.ralat);
+    state.permintaan=r.permintaan;
+    msg.className="msg ok";
+    msg.textContent="Selesai: "+r.sekolah+" sekolah, "+r.opsyen+" nilai opsyen diubah.";
+    renderPermintaan(); render();
+  }catch(e){ msg.className="msg bad"; msg.textContent=e.message; }
+}
+function isiPukal(){
+  const sel=document.getElementById("pukal-komponen"); if(!sel) return;
+  const set=new Set(["PBS 1","PBS 2","Praktikum Fasa 1","Praktikum Fasa 2/Internship","Praktikum (PDPP)"]);
+  for(const r of Object.values(state.permintaan||{})) Object.keys(r.komponen||{}).forEach(k=>set.add(k));
+  const semasa=sel.value;
+  sel.innerHTML=`<option value="">Semua komponen</option>`+[...set].sort().map(k=>`<option>${esc(k)}</option>`).join("");
+  sel.value=semasa;
+  const op=document.getElementById("pukal-operasi");
+  if(op && !op.dataset.pasang){
+    op.dataset.pasang="1";
+    const tukar=()=>{ document.getElementById("pukal-unit").textContent = op.value==="peratus" ? "(peratus %)" : "(bilangan)"; };
+    op.addEventListener("change",tukar); tukar();
+  }
+}
+
+/* ---------- segerak pelajar dari pangkalan data ---------- */
+async function segerakPelajar(senyap){
+  const API=(window.KONFIG&&window.KONFIG.API_URL)||"";
+  const badge=document.getElementById("status-segerak");
+  try{
+    const r=await fetch(uaksiLuar("pelajar_semua"),{cache:"no-store"});
+    const senarai=await r.json();
+    if(!Array.isArray(senarai) || !senarai.length) throw new Error("pangkalan data kosong");
+    const dulu={};
+    state.pelajar.forEach(p=>{ if(p.sekolah) dulu[p.ic||p.no_kad_pengenalan]=p.sekolah; });
+    const tajuk=["nama","no_kad_pengenalan","no_angka_giliran","no_matrik","program","kohort","opsyen",
+                 "komponen","kod_kursus","alamat","latitud","longitud","pilihan1","pilihan2","pilihan3","kapasiti","rakan"];
+    const rows=[tajuk, ...senarai.map(x=>[
+      x.nama||"", x.ic||"", x.angka||"", x.matrik||"", x.program||"", x.kohort||"",
+      x.opsyen||"", x.komponen||"", x.kod||"", x.alamat||"",
+      x.lat??"", x.lon??"",
+      (x.pilihan||[])[0]||"", (x.pilihan||[])[1]||"", (x.pilihan||[])[2]||"",
+      x.kapasiti||0, (x.rakan||[]).join(";"),
+    ])];
+    importPelajar(rows);
+    let pulih=0;
+    state.pelajar.forEach(p=>{ const k=p.ic; if(dulu[k] && !p.sekolah){ p.sekolah=dulu[k]; pulih++; } });
+    if(pulih) render();
+    if(badge){
+      const pilih=state.pelajar.filter(p=>(p.pilihan||[]).length).length;
+      badge.textContent="Segerak "+new Date().toLocaleTimeString("ms-MY",{hour:"2-digit",minute:"2-digit"})+
+        " · "+state.pelajar.length+" pelajar · "+pilih+" telah memilih";
+    }
+    return true;
+  }catch(e){
+    if(badge) badge.textContent="Pangkalan data tidak dapat dihubungi";
+    if(!senyap) alert("Gagal menyegerak: "+e.message);
+    return false;
+  }
+}
+
+/* ---------- paparan ---------- */
+const LABEL_STATUS={
+  ok:['ok','OK'], rakan:['warn','Ikut pilihan rakan'], luar:['warn','Luar pilihan'],
+  kapasiti:['bad','Kapasiti kenderaan'], manual:['warn','Manual'], gagal:['bad','Belum ditempatkan'],
+  ikut:['ok','Ikut Fasa 2'], rawak:['warn','Rawak (tiada permintaan)']
+};
+function nilai(id){ const el=document.getElementById(id); return el?el.value:""; }
+function isiPenapis(){
+  const isi=(id,senarai,semua)=>{
+    const el=document.getElementById(id); if(!el) return;
+    const semasa=el.value;
+    el.innerHTML=`<option value="">${semua}</option>`+
+      senarai.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join("");
+    el.value=semasa;
+  };
+  isi("filter-daerah",[...new Set(state.sekolah.map(s=>s.pd).filter(Boolean))].sort(),"Semua daerah");
+  isi("filter-kohort",[...new Set(state.pelajar.map(p=>p.kohort).filter(Boolean))].sort(),"Semua kohort");
+  isi("filter-opsyen",[...new Set(state.pelajar.map(p=>p.opsyen).filter(Boolean))].sort(),"Semua opsyen");
+  isi("filter-komponen",[...new Set(state.pelajar.map(p=>p.komponen).filter(Boolean))],"Semua komponen");
+}
+/* daerah pelajar diambil daripada sekolah terdekat dengan alamatnya */
+function daerahPelajar(p){ const c=calon(p)[0]; return c?(c.s.pd||""):""; }
+
+function render(){
+  document.getElementById("kuota").value = SLOT.muridPerSlot;
+  document.getElementById("kuota-min").value = SLOT.min;
+  document.getElementById("kuota-max").value = SLOT.max;
+  document.getElementById("cnt-sekolah").textContent = state.sekolah.length;
+  document.getElementById("cnt-pelajar").textContent = state.pelajar.length;
+  isiSenaraiSekolah();
+  const beban=kiraBeban();
+
+  // penapis aktif: daerah, kohort, opsyen, komponen
+  isiPenapis();
+  const F={daerah:nilai("filter-daerah"),kohort:nilai("filter-kohort"),
+           opsyen:nilai("filter-opsyen"),komponen:nilai("filter-komponen")};
+  const lulus=p=>(!F.kohort||p.kohort===F.kohort)&&(!F.opsyen||p.opsyen===F.opsyen)
+    &&(!F.komponen||p.komponen===F.komponen)&&(!F.daerah||daerahPelajar(p)===F.daerah);
+
+  // --- sekolah
+  document.getElementById("tbl-sekolah").tBodies[0].innerHTML = state.sekolah.map(s=>{
+    const isi=Object.keys(beban).filter(k=>k.startsWith(s.kod+"||"))
+      .map(k=>{ const b=k.split("||"); return esc(b[1])+"("+esc(b[2]||"—")+"): "+beban[k]; }).join(", ");
+    return `<tr><td class="mono">${esc(s.kod)}</td><td>${esc(s.nama)}</td><td>${esc(s.jenis||"")}</td>
+      <td>${esc(s.bandar||"")}</td><td>${esc(s.pd||"")}</td><td>${s.murid??""}</td>
+      <td>${kuotaSekolah(s.kod)}</td>
+      <td>${opsyenDibenarkan(s.kod)?esc("Hanya "+opsyenDibenarkan(s.kod).join(", ")):"Semua"}</td>
+      <td class="mono">${s.lat.toFixed(4)}, ${s.lon.toFixed(4)}</td><td>${isi||"—"}</td>
+      <td><button class="btn-mini" data-sekat="${esc(s.kod)}">${disekat(s.kod)?"Buka":"Sekat"}</button>
+        ${disekat(s.kod)?'<span class="pill bad">disekat</span>':""}</td></tr>`;
+  }).join("");
+  document.querySelectorAll("[data-sekat]").forEach(b=>{
+    b.onclick=()=>{
+      const kod=b.dataset.sekat;
+      if(disekat(kod)) state.sekat=state.sekat.filter(x=>x!==kod);
+      else state.sekat.push(kod);
+      simpan(); render();
+    };
+  });
+  const kp=state.sekolah.filter(s=>/KUBANG PASU/i.test(s.pd)).length;
+  document.getElementById("stat-sekolah").innerHTML =
+    `<b>${state.sekolah.length}</b> sekolah · Kubang Pasu ${kp} · Kota Setar ${state.sekolah.length-kp}`;
+
+  // --- pelajar
+  document.getElementById("tbl-pelajar").tBodies[0].innerHTML = state.pelajar.filter(lulus).map(p=>{
+    const pil=pilihan(p).map(k=>esc(k)).join(" → ") || "—";
+    const kend=p.kapasiti>0 ? `Pemandu (${p.kapasiti})` : "—";
+    return `<tr><td>${esc(p.nama)}</td><td class="mono">${esc(p.ic||"—")}</td>
+      <td class="mono">${esc(p.angka||p.matrik||"—")}</td><td>${esc(p.program||"—")}</td><td>${esc(p.opsyen)}</td>
+      <td>${esc(p.komponen||"—")}</td><td>${esc(p.alamat)}</td><td class="mono">${pil}</td><td>${kend}</td>
+      <td class="mono">${(p.rakan||[]).length?esc(p.rakan.join("; ")):"—"}</td>
+      <td style="white-space:nowrap"><button class="mini" data-edit="${p.id}">sunting</button>
+      <button class="mini" data-hapus="${p.id}">padam</button></td></tr>`;
+  }).join("");
+  document.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>suntingPelajar(b.dataset.edit));
+  document.querySelectorAll("[data-hapus]").forEach(b=>b.onclick=()=>hapusPelajar(b.dataset.hapus));
+
+  // penetapan
+  const senarai=state.pelajar.filter(lulus);
+  document.getElementById("tbl-penetapan").tBodies[0].innerHTML = senarai.map(p=>{
+    const s=state.sekolah.find(x=>x.kod===p.sekolah);
+    const terlarang=sekolahTerlarang(p);
+    const ganda=s?terlarang.has(p.sekolah):false;
+    const isiSlot=s?(beban[kunci(p,p.sekolah)]||0):0;
+    const st = !p.sekolah?LABEL_STATUS.gagal
+      : ganda?['bad','Sekolah berulang']
+      : isiSlot>kuotaSekolah(p.sekolah)?['bad','Melebihi kuota']
+      : (LABEL_STATUS[p.status]||['ok','OK']);
+    const semua=state.sekolah.map(sc=>({s:sc, km:jarakKm(p,sc)})).filter(x=>x.km!=null).sort((a,b)=>a.km-b.km);
+    const papar=semua.slice(0,15);
+    if(p.sekolah && !papar.some(c=>c.s.kod===p.sekolah)){
+      const cur=semua.find(c=>c.s.kod===p.sekolah); if(cur) papar.unshift(cur);
+    }
+    const opts=`<option value="">— tiada —</option>`+papar.map(c=>{
+      const kb=(beban[kunci(p,c.s.kod)]||0)-(p.sekolah===c.s.kod?1:0);
+      const penuh=kb>=kuotaSekolah(c.s.kod), pernah=terlarang.has(c.s.kod)||disekat(c.s.kod);
+      const tanda=c.s.kod===pilihan(p)[0]?" ★":"";
+      return `<option value="${esc(c.s.kod)}" ${c.s.kod===p.sekolah?"selected":""} ${(penuh||pernah)?"disabled":""}>
+        ${esc(c.s.nama)} — ${c.km.toFixed(1)} km${tanda}${penuh?" (penuh)":""}${pernah?" (pernah)":""}</option>`;
+    }).join("");
+    return `<tr><td>${esc(p.nama)}${p.manual?' <span class="pill warn">manual</span>':""}</td>
+      <td class="mono">${esc(p.matrik)}<br>${esc(p.ic||"")}</td><td>${esc(p.opsyen)}</td><td>${esc(p.komponen||"—")}</td>
+      <td class="mono">${esc(p.kumpulan||"—")}</td>
+      <td>${s?esc(s.nama):"—"}</td><td>${p.jarak??"—"}</td>
+      <td><span class="pill ${st[0]}">${st[1]}</span></td>
+      <td><select data-id="${p.id}">${opts}</select></td></tr>`;
+  }).join("");
+  document.querySelectorAll("#tbl-penetapan select").forEach(sel=>{
+    sel.onchange=e=>tukarSekolah(e.target.dataset.id, e.target.value);
+  });
+  document.getElementById("stat-sejarah").innerHTML =
+    `<b>${state.sejarah.length}</b> rekod arkib · ${new Set(state.sejarah.map(s=>s.matrik)).size} pelajar`;
+
+  // tetingkap penghantaran per komponen
+  const elT=document.getElementById("senarai-tetingkap");
+  if(elT){
+    const komponenAda=[...KOMPONEN, ...new Set(state.pelajar.map(p=>p.komponen).filter(k=>k && !KOMPONEN.includes(k)))];
+    elT.innerHTML=komponenAda.map(k=>{
+      const bil=state.pelajar.filter(p=>p.komponen===k).length;
+      const buka=state.tetingkap[k]!==false;
+      return `<div class="row" style="justify-content:space-between;border:1px solid var(--rule);border-radius:9px;padding:9px 12px">
+        <span><b>${esc(k)}</b> <span class="stat">· ${bil} pelajar · kapasiti ${kapasitiKomponen(k).toLocaleString("ms-MY")}</span></span>
+        <span class="row" style="gap:8px">
+          <span class="pill ${buka?"ok":"bad"}">${buka?"dibuka":"ditutup"}</span>
+          <button class="btn-mini" data-tetingkap="${esc(k)}">${buka?"Tutup":"Buka"}</button>
+        </span>
+      </div>`;
+    }).join("");
+    elT.querySelectorAll("[data-tetingkap]").forEach(b=>{
+      b.onclick=()=>{
+        const k=b.dataset.tetingkap;
+        state.tetingkap[k]=(state.tetingkap[k]===false);
+        simpan(); render();
+        // hantar ke pelayan jika API dikonfigurasi, supaya borang pelajar ikut serta-merta
+        const API=(window.KONFIG&&window.KONFIG.API_URL)||"";
+        if(API){
+          fetch(uaksiLuar("tetingkap_simpan"),{method:"POST",
+            body:JSON.stringify({komponen:k,buka:state.tetingkap[k]})})
+            .catch(()=>{});
+        }
+      };
+    });
+  }
+  const ditempat=state.pelajar.filter(p=>p.sekolah).length;
+  document.getElementById("stat-penetapan").innerHTML=`<b>${ditempat}</b> / ${state.pelajar.length} ditempatkan`;
+
+  // --- laporan
+  const kumpul={};
+  for(const p of state.pelajar.filter(lulus)){
+    if(!p.sekolah) continue;
+    (kumpul[p.sekolah] ||= {n:0, butiran:{}, km:[]});
+    kumpul[p.sekolah].n++;
+    const kk=(p.komponen||"—")+" · "+p.opsyen;
+    kumpul[p.sekolah].butiran[kk]=(kumpul[p.sekolah].butiran[kk]||0)+1;
+    if(p.jarak!=null) kumpul[p.sekolah].km.push(p.jarak);
+  }
+  document.getElementById("tbl-ringkas").tBodies[0].innerHTML=Object.keys(kumpul).map(kod=>{
+    const s=state.sekolah.find(x=>x.kod===kod)||{nama:kod};
+    const d=kumpul[kod];
+    const purata=d.km.length?(d.km.reduce((a,b)=>a+b,0)/d.km.length).toFixed(1):"—";
+    const o=Object.entries(d.butiran).map(([k,v])=>esc(k)+": "+v).join("<br>");
+    return `<tr><td>${esc(s.nama)}</td><td>${d.n}</td><td>${o}</td><td>${purata}</td></tr>`;
+  }).join("");
+
+  const gk=kumpulanKenderaan();
+  document.getElementById("tbl-kumpulan").tBodies[0].innerHTML=gk.map(g=>{
+    const sekolah=new Set(g.ahli.filter(p=>p.sekolah).map(p=>p.sekolah));
+    const nama=s=>state.sekolah.find(x=>x.kod===s)?.nama||s;
+    const statusKumpulan = !g.cukup ? `<span class="pill bad">Kapasiti tidak cukup</span>`
+      : sekolah.size===0 ? `<span class="pill bad">Belum ditempatkan</span>`
+      : sekolah.size>1 ? `<span class="pill bad">Berpecah</span>`
+      : `<span class="pill ok">Serentak</span>`;
+    return `<tr><td class="mono">${esc(g.label)}</td><td>${esc(g.ahli[0].komponen||"—")}</td>
+      <td>${g.ahli.map(p=>esc(p.nama)).join("<br>")}</td>
+      <td>${g.pemandu?esc(g.pemandu.nama)+" ("+g.pemandu.kapasiti+")":"—"}</td>
+      <td>${[...sekolah].map(s=>esc(nama(s))).join("<br>")||"—"}</td><td>${statusKumpulan}</td></tr>`;
+  }).join("");
+
+  document.getElementById("stat-laporan").innerHTML=
+    `<b>${Object.keys(kumpul).length}</b> sekolah · ${state.pelajar.filter(lulus).filter(p=>!p.sekolah).length} belum ditempatkan · ${gk.filter(g=>g.ahli.length>1).length} kumpulan`;
+}
+
+/* ---------- eksport status untuk borang pelajar ---------- */
+function csvStatus(){
+  const beban=kiraBeban();
+  const opsyen=[...new Set(state.pelajar.map(p=>p.opsyen))];
+  const komponen=[...new Set(state.pelajar.map(p=>p.komponen))];
+  const masa=new Date().toISOString().slice(0,16).replace("T"," ");
+  const baris=["kod,opsyen,komponen,kuota,terisi,disekat,dikemas"];
+  for(const s of state.sekolah){
+    for(const o of opsyen){
+      for(const k of komponen){
+        const kk=s.kod+"||"+o+"||"+k;
+        baris.push([s.kod,o,k,kuotaSel(s.kod,o,k),beban[kk]||0,disekat(s.kod)?1:0,masa]
+          .map(v=>{ const t=String(v); return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t; }).join(","));
+      }
+    }
+  }
+  return baris.join("\n");
+}
+function eksportStatus(){
+  const blob=new Blob(["\uFEFF"+csvStatus()],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="status-sekolah.csv";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ---------- eksport ---------- */
+function eksport(){
+  const h=["nama","no_kad_pengenalan","no_matrik","program","kohort","opsyen","komponen","kod_kursus",
+           "alamat","pilihan1","pilihan2","pilihan3","kapasiti","rakan","kumpulan",
+           "sekolah_kod","sekolah_nama","jarak_km","status"];
+  const baris=[h.join(",")];
+  for(const p of state.pelajar){
+    const s=state.sekolah.find(x=>x.kod===p.sekolah);
+    const pil=pilihan(p);
+    baris.push([p.nama,p.ic||"",p.matrik,p.program||"",p.kohort||"",p.opsyen,p.komponen||"",p.kod||"",p.alamat,
+      pil[0]||"",pil[1]||"",pil[2]||"",p.kapasiti||0,(p.rakan||[]).join(";"),
+      p.kumpulan||"",p.sekolah||"",s?s.nama:"",p.jarak??"",
+      (LABEL_STATUS[p.status]||['',''])[1]||""].map(v=>{
+      const t=String(v==null?"":v);
+      return /[",\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t;
+    }).join(","));
+  }
+  const blob=new Blob(["\uFEFF"+baris.join("\n")],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="penempatan-praktikum.csv";
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ---------- geokod ---------- */
+async function geokodAlamat(alamat){
+  const q=encodeURIComponent((alamat||"")+", Kedah, Malaysia");
+  const r=await fetch(`https://photon.komoot.io/api/?q=${q}&limit=1&lang=en`);
+  const j=await r.json();
+  const f=j.features && j.features[0];
+  if(!f) return null;
+  return {lat:f.geometry.coordinates[1], lon:f.geometry.coordinates[0]};
+}
+async function geokodSemua(){
+  const status=document.getElementById("geocode-status");
+  const perlu=state.pelajar.filter(p=>p.lat==null||p.lon==null);
+  if(!perlu.length){ status.textContent="Semua pelajar sudah ada koordinat."; return; }
+  let ok=0, gagal=0;
+  for(let i=0;i<perlu.length;i++){
+    const p=perlu[i];
+    status.textContent=`Geokod ${i+1}/${perlu.length}: ${p.nama}…`;
+    try{ const k=await geokodAlamat(p.alamat); if(k){ p.lat=k.lat; p.lon=k.lon; ok++; } else gagal++; }
+    catch(e){ gagal++; }
+    await new Promise(r=>setTimeout(r,350));
+  }
+  simpan(); render();
+  status.textContent=`Selesai: ${ok} berjaya, ${gagal} gagal. Semak koordinat yang mencurigakan.`;
+}
+
+/* ---------- arkib sejarah ---------- */
+function arkib(){
+  const ada=state.pelajar.filter(p=>p.sekolah);
+  if(!ada.length) return alert("Tiada penempatan untuk diarkibkan.");
+  const tahun=new Date().getFullYear();
+  const sesi=prompt("Nama sesi untuk arkib (contoh: 2026/2027):", tahun+"/"+(tahun+1));
+  if(sesi===null) return;
+  let baharu=0;
+  for(const p of ada){
+    if(state.sejarah.some(s=>s.matrik===p.matrik && s.sekolah===p.sekolah && s.komponen===p.komponen)) continue;
+    state.sejarah.push({matrik:p.matrik, nama:p.nama, sekolah:p.sekolah, opsyen:p.opsyen, komponen:p.komponen, sesi:sesi||""});
+    baharu++;
+  }
+  simpan(); render();
+  alert("Diarkibkan "+baharu+" rekod baharu (jumlah "+state.sejarah.length+").");
+}
+
+/* ---------- data contoh ---------- */
+const CONTOH_PELAJAR = `nama,no_matrik,opsyen,komponen,kod_kursus,alamat,latitud,longitud,pilihan1,pilihan2,pilihan3,kapasiti,rakan
+Nur Aisyah binti Rahman,2023123456,Bahasa Melayu,Praktikum Fasa 1,PRKA3195,"Taman Jitra Jaya, Jitra",6.2645,100.4200,KBA4009,KBA4016,KBA4013,3,2023123457;2023123458
+Muhammad Haziq bin Omar,2023123457,Matematik,Praktikum Fasa 1,PRKA3195,"Taman Bersatu, Jitra",6.2701,100.4180,KBA4009,KBA4016,KBA4013,0,2023123456;2023123458
+Tan Wei Ling,2023123458,Bahasa Inggeris (TESL),Praktikum Fasa 1,PRKA3195,"Taman Wira, Jitra",6.2680,100.4250,KBA4013,KBA4009,KBA4016,0,2023123456;2023123457
+Siti Aminah binti Yusof,2023123459,Sains,PBS 2,PRKA3171,"Kampung Padang Perahu, Jitra",6.3117,100.3648,KBA4016,KBA4009,KBA4013,0,`;
+
+/* ---------- pasang ---------- */
+function bacaFail(e, fn){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ fn(parseCSV(r.result)); }catch(err){ alert("Ralat import: "+err.message); } };
+  r.readAsText(f,"utf-8");
+  e.target.value="";
+}
+function pasang(){
+  document.querySelectorAll("nav button").forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll("nav button").forEach(x=>x.classList.remove("active"));
+      document.querySelectorAll("section").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      document.getElementById("tab-"+b.dataset.tab).classList.add("active");
+    };
+  });
+  document.getElementById("btn-import-sekolah").onclick=()=>document.getElementById("file-sekolah").click();
+  document.getElementById("file-sekolah").onchange=e=>bacaFail(e, importSekolah);
+  document.getElementById("btn-import-pelajar").onclick=()=>document.getElementById("file-pelajar").click();
+  document.getElementById("file-pelajar").onchange=e=>bacaFail(e, importPelajar);
+
+  document.getElementById("btn-contoh-sekolah").onclick=async()=>{
+    try{
+      const r=await fetch("sekolah.csv");
+      if(!r.ok) throw new Error("sekolah.csv tidak dijumpai");
+      importSekolah(parseCSV(await r.text()));
+    }catch(e){ alert("Gagal memuat sekolah.csv: "+e.message); }
+  };
+  document.getElementById("btn-contoh-pelajar").onclick=()=>segerakPelajar(false);
+  document.getElementById("btn-geocode").onclick=geokodSemua;
+  document.getElementById("btn-jalan").onclick=tetapkanAuto;
+  document.getElementById("btn-muat-permintaan").onclick=muatPermintaan;
+  document.getElementById("btn-simpan-had").onclick=simpanHad;
+  document.getElementById("btn-laras-pukal").onclick=larasPukal;
+  document.getElementById("tbl-permintaan").addEventListener("click",(e)=>{
+    const b=e.target.closest(".btn-laras");
+    if(b) larasPermintaan(b.dataset.kod, b.dataset.komponen);
+  });
+  document.getElementById("btn-arkib").onclick=arkib;
+  document.getElementById("btn-kosong-sejarah").onclick=()=>{
+    if(!state.sejarah.length) return alert("Sejarah sudah kosong.");
+    if(!confirm("Padam "+state.sejarah.length+" rekod sejarah?")) return;
+    state.sejarah=[]; simpan(); render();
+  };
+  ["filter-daerah","filter-kohort","filter-opsyen","filter-komponen"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.onchange=render;
+  });
+  document.getElementById("kuota").onchange=e=>{ SLOT.muridPerSlot=Math.max(20,parseInt(e.target.value)||200); render(); };
+  document.getElementById("kuota-min").onchange=e=>{ SLOT.min=Math.max(1,parseInt(e.target.value)||1); render(); };
+  document.getElementById("kuota-max").onchange=e=>{ SLOT.max=Math.max(SLOT.min, Math.min(600, parseInt(e.target.value)||4)); render(); };
+  document.getElementById("btn-clear-penempatan").onclick=()=>{
+    state.pelajar.forEach(p=>{p.sekolah=null;p.jarak=null;p.manual=false;p.status="";p.kumpulan="";});
+    simpan(); render();
+  };
+  document.getElementById("btn-reset").onclick=()=>{
+    if(!confirm("Padam semua data sekolah, pelajar dan sejarah?")) return;
+    state.sekolah=[]; state.pelajar=[]; state.sejarah=[]; localStorage.removeItem(KEY); render();
+  };
+  document.getElementById("btn-export").onclick=eksport;
+  document.getElementById("btn-status").onclick=eksportStatus;
+
+  document.getElementById("btn-simpan-pelajar").onclick=simpanBorang;
+  document.getElementById("btn-borang-baru").onclick=kosongBorang;
+  document.getElementById("btn-geokod-borang").onclick=async()=>{
+    const st=document.getElementById("status-borang");
+    const alamat=document.getElementById("f-alamat").value.trim();
+    if(!alamat) return st.textContent="Isi alamat dahulu.";
+    st.textContent="Mengekod alamat…";
+    try{
+      const k=await geokodAlamat(alamat);
+      if(!k) return st.textContent="Alamat tidak dijumpai. Isi latitud/longitud manual (klik kanan pada Google Maps).";
+      document.getElementById("f-lat").value=k.lat.toFixed(6);
+      document.getElementById("f-lon").value=k.lon.toFixed(6);
+      st.textContent="Koordinat diisi: "+k.lat.toFixed(5)+", "+k.lon.toFixed(5);
+    }catch(e){ st.textContent="Geokod gagal: "+e.message; }
+  };
+}
+/* ---------- log masuk Unit Praktikum ---------- */
+const SESI = "praktikum.admin.sesi";
+const HASH_ADMIN = "52b68bc492bcd4a5bd518825b71504edc2b563e7c889669bd054e2ee87a25b22";
+
+async function sha256(teks){
+  if(!(window.crypto && crypto.subtle)) throw new Error("Pelayar ini tidak menyokong pengesahan selamat. Buka melalui http://127.0.0.1:8787");
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(teks));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+function sesiSah(){
+  try{
+    const s = JSON.parse(localStorage.getItem(SESI) || "{}");
+    return !!(s.exp && s.exp > Date.now());
+  }catch(e){ return false; }
+}
+function tunjukApp(sah){
+  document.getElementById("pintu").hidden = sah;
+  document.getElementById("shell").hidden = !sah;
+  if(!sah) document.getElementById("id-pengguna").focus();
+}
+document.getElementById("borang-masuk").onsubmit = async (ev) => {
+  ev.preventDefault();
+  const ralat = document.getElementById("ralat-masuk");
+  const id = document.getElementById("id-pengguna").value.trim().toLowerCase();
+  const laluan = document.getElementById("kata-laluan").value;
+  ralat.textContent = "";
+  try{
+    const h = await sha256(id + ":" + laluan);
+    if(h === HASH_ADMIN){
+      localStorage.setItem(SESI, JSON.stringify({ id, exp: Date.now() + 8*60*60*1000 }));
+      document.getElementById("kata-laluan").value = "";
+      tunjukApp(true);
+    }else{
+      ralat.textContent = "ID atau kata laluan salah.";
+      document.getElementById("kata-laluan").value = "";
+      document.getElementById("kata-laluan").focus();
+    }
+  }catch(e){ ralat.textContent = e.message; }
+};
+document.getElementById("btn-keluar").onclick = () => {
+  localStorage.removeItem(SESI);
+  document.getElementById("kata-laluan").value = "";
+  tunjukApp(false);
+};
+tunjukApp(sesiSah());
+
+muat(); pasang(); kosongBorang(); render(); muatPermintaan();
+/* segerak sendiri dari pangkalan data: sekali semasa buka, kemudian setiap 60 saat */
+segerakPelajar(true);
+setInterval(()=>{
+  const f=document.activeElement;
+  const sedangMenulis=f && (f.tagName==="INPUT"||f.tagName==="SELECT"||f.tagName==="TEXTAREA");
+  if(!document.hidden && !sedangMenulis) segerakPelajar(true);
+}, 60000);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+Fail dalam folder ini dimuat naik ke GitHub Pages (repo Public).
+
+1. index.html      - portal pilihan menu
+2. borang.html     - menu pelajar (log masuk IC)
+3. admin.html      - menu Unit Praktikum
+4. sekolah.html    - portal sekolah (kod + geo-lock)
+5. config.js       - URL API Apps Script (sudah diisi)
+6. .nojekyll       - supaya GitHub tidak proses Jekyll
+7. sheet-sekolah.csv / sheet-pelajar.csv - untuk import ke Google Sheet, TIDAK perlu di GitHub
+
+JANGAN muat naik: server.js, mula.bat, folder storan/, folder apps-script/.
+Sebelum guna data sebenar, PADAM sheet-pelajar.csv daripada GitHub.
