@@ -358,6 +358,7 @@ td select{max-width:330px}
           <button class="btn-quiet" id="btn-kunci-semua">Kunci semua yang ditempatkan</button>
           <button class="btn-quiet" id="btn-buka-kunci">Buka semua kunci</button>
           <button class="btn-quiet" id="btn-undo">Undo tindakan terakhir</button>
+          <button class="btn-quiet" id="btn-muat-semula">Muat semula dari pangkalan data</button>
           <button class="btn-quiet" id="btn-bersih-tanpa-pilihan">Buka &amp; kosongkan yang belum memilih</button>
           <label class="fld" style="flex-direction:row;align-items:center;gap:7px;max-width:260px;font-size:12.5px">
             <input type="checkbox" id="sembunyi-kunci" checked style="width:auto">
@@ -1259,6 +1260,29 @@ function tandatanganPenempatan(){
     .map(p=>[p.ic,p.sekolah||"",p.kunci?"1":"0",p.kumpulan||"",p.status||""].join(":"))
     .sort().join("|");
 }
+async function muatPenempatanPaksa(){
+  if(!apiURL()) return alert("Tiada sambungan pangkalan data.");
+  if(!confirm("Ganti semua penempatan dalam pelayar ini dengan data daripada pangkalan data?")) return;
+  try{
+    const d=await (await fetch(uaksiLuar("penempatan_penuh"),{cache:"no-store"})).json();
+    if(!Array.isArray(d)) throw new Error("format salah");
+    const ikutIC={}; d.forEach(r=>{ ikutIC[r.ic]=r; });
+    let n=0;
+    state.pelajar.forEach(p=>{
+      const r=ikutIC[p.ic];
+      if(r){
+        p.sekolah=r.sekolah||null; p.jarak=r.jarak??null; p.status=r.sekolah?(r.status||"luar"):"";
+        p.kumpulan=r.kumpulan||""; p.kunci=!!r.kunci; p.dikemas=r.dikemas||"";
+        n++;
+      }else{
+        p.sekolah=null; p.jarak=null; p.status=""; p.kunci=false; p.kumpulan="";
+      }
+    });
+    state.pelajar.forEach(p=>{ if(!ikutIC[p.ic]) p.manual=false; });
+    simpan(); render(); tandatanganTerakhir=tandatanganPenempatan();
+    document.getElementById("penetapan-err").textContent="Penempatan dimuat semula daripada pangkalan data ("+n+" rekod).";
+  }catch(e){ alert("Gagal memuat semula: "+e.message); }
+}
 async function muatTetingkap(senyap){
   if(!apiURL()) return false;
   try{
@@ -1283,7 +1307,12 @@ async function muatPenempatanPusat(senyap){
       const capP=Date.parse(p.dikemas||0)||0;
       const capR=Date.parse(rec.dikemas||0)||0;
       const lebihBaharu = capR>capP;
-      if(rec.sekolah && (!p.sekolah || (lebihBaharu && rec.sekolah!==p.sekolah))){
+      if(lebihBaharu && rec.sekolah!==(p.sekolah||"")){
+        /* pelayan lebih baharu: termasuk kes pemadaman (sekolah kosong) */
+        p.sekolah=rec.sekolah||null; p.jarak=rec.jarak??null;
+        p.status=rec.sekolah?(rec.status||"luar"):"";
+        p.kumpulan=rec.kumpulan||""; p.dikemas=rec.dikemas||""; dipakai++;
+      } else if(rec.sekolah && !p.sekolah){
         p.sekolah=rec.sekolah; p.jarak=rec.jarak??null; p.status=rec.status||"luar";
         p.kumpulan=rec.kumpulan||""; p.dikemas=rec.dikemas||""; dipakai++;
       }
@@ -1897,6 +1926,7 @@ function pasang(){
   const cbKunci=document.getElementById("sembunyi-kunci");
   if(cbKunci) cbKunci.onchange=()=>render();
   document.getElementById("btn-undo").onclick=()=>undoPenempatan();
+  document.getElementById("btn-muat-semula").onclick=()=>muatPenempatanPaksa();
   document.getElementById("btn-bersih-tanpa-pilihan").onclick=()=>{
     const senarai=state.pelajar.filter(p=>!pilihan(p).length && (p.sekolah||p.kunci));
     if(!senarai.length) return alert("Tiada pelajar tanpa pilihan yang ditempatkan.");
