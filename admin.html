@@ -1035,6 +1035,13 @@ async function muatPermintaan(){
     ]);
     state.permintaan = (p&&typeof p==="object")?p:{};
     state.hadOpsyen = (t&&t.hadOpsyen)||{};
+    if(t && t.slot){
+      SLOT.muridPerSlot=Math.max(20,Number(t.slot.muridPerSlot)||200);
+      SLOT.min=Math.max(1,Number(t.slot.min)||1);
+      SLOT.max=Math.max(SLOT.min,Number(t.slot.max)||4);
+      const el1=document.getElementById("kuota"), el2=document.getElementById("kuota-min"), el3=document.getElementById("kuota-max");
+      if(el1) el1.value=SLOT.muridPerSlot; if(el2) el2.value=SLOT.min; if(el3) el3.value=SLOT.max;
+    }
   }catch(e){ /* luar talian: kekalkan data sedia ada */ }
   renderPermintaan(); renderHad();
 }
@@ -1082,7 +1089,7 @@ async function simpanHad(){
   });
   try{
     const r=await fetch(uaksi("tetapan_simpan"),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body:JSON.stringify({hadOpsyen:had})}).then(x=>x.json());
+      body:JSON.stringify({hadOpsyen:had, slot:{muridPerSlot:SLOT.muridPerSlot, min:SLOT.min, max:SLOT.max}})}).then(x=>x.json());
     if(r.ralat) throw new Error(r.ralat);
     state.hadOpsyen=r.tetapan.hadOpsyen;
     msg.className="msg ok"; msg.textContent="Had opsyen disimpan.";
@@ -1152,6 +1159,17 @@ function tandatanganPenempatan(){
   return state.pelajar.filter(p=>p.sekolah||p.kunci)
     .map(p=>[p.ic,p.sekolah||"",p.kunci?"1":"0",p.kumpulan||"",p.status||""].join(":"))
     .sort().join("|");
+}
+async function muatTetingkap(senyap){
+  if(!apiURL()) return false;
+  try{
+    const d=await (await fetch(uaksiLuar("tetingkap"),{cache:"no-store"})).json();
+    if(!d || typeof d!=="object" || Array.isArray(d)) return false;
+    const sebelum=JSON.stringify(state.tetingkap||{});
+    state.tetingkap=d; simpan();
+    if(JSON.stringify(d)!==sebelum) render();
+    return true;
+  }catch(e){ if(!senyap) console.warn("tetingkap:",e.message); return false; }
 }
 async function muatPenempatanPusat(senyap){
   if(!apiURL()) return false;
@@ -1300,9 +1318,14 @@ function render(){
   document.querySelectorAll("[data-sekat]").forEach(b=>{
     b.onclick=()=>{
       const kod=b.dataset.sekat;
-      if(disekat(kod)) state.sekat=state.sekat.filter(x=>x!==kod);
+      const asalnya=disekat(kod);
+      if(asalnya) state.sekat=state.sekat.filter(x=>x!==kod);
       else state.sekat.push(kod);
       simpan(); render();
+      if(apiURL()){
+        fetch(uaksiLuar("sekat"),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+          body:JSON.stringify({kod, sekat:!asalnya})}).catch(()=>{});
+      }
     };
   });
   const kiraDaerah={};
@@ -1602,9 +1625,16 @@ function pasang(){
   ["filter-daerah","filter-kohort","filter-opsyen","filter-komponen","filter-pilih"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.onchange=render;
   });
-  document.getElementById("kuota").onchange=e=>{ SLOT.muridPerSlot=Math.max(20,parseInt(e.target.value)||200); render(); };
-  document.getElementById("kuota-min").onchange=e=>{ SLOT.min=Math.max(1,parseInt(e.target.value)||1); render(); };
-  document.getElementById("kuota-max").onchange=e=>{ SLOT.max=Math.max(SLOT.min, Math.min(600, parseInt(e.target.value)||4)); render(); };
+  const hantarSlot=()=>{
+    if(!apiURL()) return;
+    const had={};
+    document.querySelectorAll("#grid-had-opsyen input[data-had]").forEach(inp=>{ had[inp.dataset.had]=Math.max(1,Number(inp.value)||2); });
+    fetch(uaksiLuar("tetapan_simpan"),{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body:JSON.stringify({hadOpsyen:had, slot:{muridPerSlot:SLOT.muridPerSlot, min:SLOT.min, max:SLOT.max}})}).catch(()=>{});
+  };
+  document.getElementById("kuota").onchange=e=>{ SLOT.muridPerSlot=Math.max(20,parseInt(e.target.value)||200); render(); hantarSlot(); };
+  document.getElementById("kuota-min").onchange=e=>{ SLOT.min=Math.max(1,parseInt(e.target.value)||1); render(); hantarSlot(); };
+  document.getElementById("kuota-max").onchange=e=>{ SLOT.max=Math.max(SLOT.min, Math.min(600, parseInt(e.target.value)||4)); render(); hantarSlot(); };
   const setKunci=(val)=>{
     const skop=(document.getElementById("skop-tetap")||{}).value||"semua";
     const daerahSkop=nilai("filter-daerah");
@@ -1707,6 +1737,8 @@ tunjukApp(sesiSah());
 async function segerakPenuh(senyap){
   await segerakPelajar(senyap);
   await muatPenempatanPusat(senyap);
+  await muatTetingkap(senyap);
+  await muatPermintaan();
   tandatanganTerakhir=tandatanganPenempatan();
 }
 segerakPenuh(true);
