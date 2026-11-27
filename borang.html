@@ -275,7 +275,20 @@ async function muatData(){
       hadOpsyenApi=sk.hadOpsyen||{};
       permintaanApi=sk.permintaan||{};
       tetingkap=(tp&&typeof tp==="object")?tp:{};
-      document.getElementById("status-masa").textContent="Tersambung ke pangkalan data pusat. Data pelajar disimpan terus ke sana.";
+      /* sandaran: jika Sheet Sekolah kosong, guna sekolah.csv supaya dropdown tetap berfungsi */
+      if(!sekolah.length){
+        try{
+          const t=await (await fetch("sekolah.csv")).text();
+          sekolah=objek(parseCSV(t)).map(s=>({
+            kod:s.kod, nama:s.nama, jenis:s.jenis, bandar:s.bandar, ppd:s.ppd,
+            murid:num(s.murid), lat:num(s.latitud), lon:num(s.longitud), disekat:false, kuota:null,
+          }));
+          document.getElementById("status-masa").textContent=
+            "Senarai sekolah dibaca daripada fail sandaran (Sheet Sekolah kosong). Hubungi Unit Praktikum untuk mengisi pangkalan data.";
+        }catch(e){ /* tiada sandaran */ }
+      }
+      if(!document.getElementById("status-masa").textContent.trim())
+        document.getElementById("status-masa").textContent="Tersambung ke pangkalan data pusat. Data pelajar disimpan terus ke sana.";
       ["muat-turun","muat-semua"].forEach(id=>{ const el=document.getElementById(id); if(el){ el.hidden=true; el.closest(".card").hidden=true; } });
     }catch(e){
       document.getElementById("status-masa").textContent="Tidak dapat menghubungi pangkalan data pusat: "+e.message;
@@ -446,7 +459,7 @@ document.getElementById("masuk").onclick=async()=>{
   const calonIC=[...new Set([mentah, mentah.padStart(12,"0"), ("0"+mentah).slice(-12)].filter(x=>x.length===12))];
   const cariIC=(senarai)=>senarai
     .map(r=>({r, ic:(r.no_kad_pengenalan||r.ic||"").replace(/[^0-9]/g,"")}))
-    .find(x=>calonIC.includes(x.ic));
+    .find(x=>calonIC.includes((x.ic||"").padStart(12,"0")));
 
   if(API){
     pelajar=null;

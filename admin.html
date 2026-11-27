@@ -200,7 +200,7 @@ td select{max-width:330px}
       <span class="brand-mark">IPDA</span>
       <span class="brand-text">
         <span class="brand-name">Penempatan Praktikum</span>
-        <span class="brand-sub">Kubang Pasu &amp; Kota Setar</span>
+        <span class="brand-sub">Kubang Pasu · Kota Setar · Padang Terap</span>
       </span>
     </div>
     <nav>
@@ -230,6 +230,11 @@ td select{max-width:330px}
       <label class="fld">Kohort <select id="filter-kohort"><option value="">Semua kohort</option></select></label>
       <label class="fld">Opsyen <select id="filter-opsyen"><option value="">Semua opsyen</option></select></label>
       <label class="fld">Komponen <select id="filter-komponen"><option value="">Semua komponen</option></select></label>
+      <label class="fld">Status pilihan <select id="filter-pilih">
+        <option value="sudah">Sudah memilih</option>
+        <option value="belum">Belum memilih</option>
+        <option value="">Semua pelajar</option>
+      </select></label>
     </div>
     <div class="rail-foot">
       IPG Kampus Darulaman<br>
@@ -603,6 +608,7 @@ function pilihan(p){ return (p.pilihan||[]).filter(Boolean); }
 
 /* ---------- import ---------- */
 function importSekolah(rows){
+  rows=rows.map(r=>r.map(v=>v==null?"":String(v)));
   const h=rows[0].map(x=>x.trim().toLowerCase());
   const idx=n=>h.indexOf(n);
   const i={kod:idx("kod"),nama:idx("nama"),jenis:idx("jenis"),bandar:idx("bandar"),
@@ -620,7 +626,8 @@ function importSekolah(rows){
   state.sekolah=out; simpan(); render();
 }
 function importPelajar(rows){
-  const h=rows[0].map(x=>x.trim().toLowerCase());
+  rows=rows.map(r=>r.map(v=>v==null?"":String(v)));
+  const h=rows[0].map(x=>String(x).trim().toLowerCase());
   const idx=n=>h.indexOf(n);
   const i={nama:idx("nama"),matrik:idx("no_matrik"),ic:idx("no_kad_pengenalan"),angka:idx("no_angka_giliran"),
            program:idx("program"),kohort:idx("kohort"),
@@ -1165,16 +1172,19 @@ function render(){
   document.getElementById("kuota-min").value = SLOT.min;
   document.getElementById("kuota-max").value = SLOT.max;
   document.getElementById("cnt-sekolah").textContent = state.sekolah.length;
-  document.getElementById("cnt-pelajar").textContent = state.pelajar.length;
+  document.getElementById("cnt-pelajar").textContent =
+    state.pelajar.filter(p=>pilihan(p).length>0).length + "/" + state.pelajar.length;
   isiSenaraiSekolah();
   const beban=kiraBeban();
 
   // penapis aktif: daerah, kohort, opsyen, komponen
   isiPenapis();
   const F={daerah:nilai("filter-daerah"),kohort:nilai("filter-kohort"),
-           opsyen:nilai("filter-opsyen"),komponen:nilai("filter-komponen")};
+           opsyen:nilai("filter-opsyen"),komponen:nilai("filter-komponen"),
+           pilih:nilai("filter-pilih")};
   const lulus=p=>(!F.kohort||p.kohort===F.kohort)&&(!F.opsyen||p.opsyen===F.opsyen)
-    &&(!F.komponen||p.komponen===F.komponen)&&(!F.daerah||daerahPelajar(p)===F.daerah);
+    &&(!F.komponen||p.komponen===F.komponen)&&(!F.daerah||daerahPelajar(p)===F.daerah)
+    &&(!F.pilih||(F.pilih==="sudah"?pilihan(p).length>0:pilihan(p).length===0));
 
   // --- sekolah
   document.getElementById("tbl-sekolah").tBodies[0].innerHTML = state.sekolah.map(s=>{
@@ -1196,9 +1206,11 @@ function render(){
       simpan(); render();
     };
   });
-  const kp=state.sekolah.filter(s=>/KUBANG PASU/i.test(s.pd)).length;
+  const kiraDaerah={};
+  state.sekolah.forEach(s=>{ const d=(s.pd||"(tiada daerah)").replace(/^PPD\s+/i,""); kiraDaerah[d]=(kiraDaerah[d]||0)+1; });
   document.getElementById("stat-sekolah").innerHTML =
-    `<b>${state.sekolah.length}</b> sekolah · Kubang Pasu ${kp} · Kota Setar ${state.sekolah.length-kp}`;
+    `<b>${state.sekolah.length}</b> sekolah · ` +
+    Object.entries(kiraDaerah).sort().map(([d,n])=>`${esc(d)} ${n}`).join(" · ");
 
   // --- pelajar
   document.getElementById("tbl-pelajar").tBodies[0].innerHTML = state.pelajar.filter(lulus).map(p=>{
@@ -1441,11 +1453,27 @@ function pasang(){
   document.getElementById("file-pelajar").onchange=e=>bacaFail(e, importPelajar);
 
   document.getElementById("btn-contoh-sekolah").onclick=async()=>{
+    /* sumber utama: pangkalan data; sandaran: sekolah.csv */
+    try{
+      const r=await fetch(uaksiLuar("sekolah"),{cache:"no-store"});
+      const d=await r.json();
+      if(d && Array.isArray(d.sekolah) && d.sekolah.length){
+        state.sekolah=d.sekolah.map(s=>({
+          kod:s.kod, nama:s.nama, jenis:s.jenis, bandar:s.bandar, pd:s.ppd,
+          murid:s.murid, lat:s.lat, lon:s.lon, kuota:s.kuota, disekat:!!s.disekat,
+        }));
+        if(d.permintaan) state.permintaan=d.permintaan;
+        if(d.hadOpsyen) state.hadOpsyen=d.hadOpsyen;
+        state.sekat=state.sekolah.filter(s=>s.disekat).map(s=>s.kod);
+        simpan(); render();
+        return;
+      }
+    }catch(e){ /* jatuh ke CSV */ }
     try{
       const r=await fetch("sekolah.csv");
       if(!r.ok) throw new Error("sekolah.csv tidak dijumpai");
       importSekolah(parseCSV(await r.text()));
-    }catch(e){ alert("Gagal memuat sekolah.csv: "+e.message); }
+    }catch(e){ alert("Gagal memuat sekolah: "+e.message); }
   };
   document.getElementById("btn-contoh-pelajar").onclick=()=>segerakPelajar(false);
   document.getElementById("btn-geocode").onclick=geokodSemua;
@@ -1463,7 +1491,7 @@ function pasang(){
     if(!confirm("Padam "+state.sejarah.length+" rekod sejarah?")) return;
     state.sejarah=[]; simpan(); render();
   };
-  ["filter-daerah","filter-kohort","filter-opsyen","filter-komponen"].forEach(id=>{
+  ["filter-daerah","filter-kohort","filter-opsyen","filter-komponen","filter-pilih"].forEach(id=>{
     const el=document.getElementById(id); if(el) el.onchange=render;
   });
   document.getElementById("kuota").onchange=e=>{ SLOT.muridPerSlot=Math.max(20,parseInt(e.target.value)||200); render(); };
