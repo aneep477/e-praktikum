@@ -1129,6 +1129,25 @@ function isiPukal(){
 }
 
 /* ---------- segerak pelajar dari pangkalan data ---------- */
+async function muatSekolahAuto(senyap){
+  if(!apiURL()) return false;
+  try{
+    const d=await (await fetch(uaksiLuar("sekolah"),{cache:"no-store"})).json();
+    if(!d || !Array.isArray(d.sekolah) || !d.sekolah.length) return false;
+    state.sekolah=d.sekolah.map(s=>({
+      kod:s.kod, nama:s.nama, jenis:s.jenis, bandar:s.bandar, pd:s.ppd,
+      murid:s.murid, lat:s.lat, lon:s.lon, kuota:s.kuota, disekat:!!s.disekat,
+    }));
+    if(d.permintaan) state.permintaan=d.permintaan;
+    if(d.hadOpsyen) state.hadOpsyen=d.hadOpsyen;
+    state.sekat=state.sekolah.filter(s=>s.disekat).map(s=>s.kod);
+    simpan(); render();
+    return true;
+  }catch(e){
+    if(!senyap) alert("Gagal memuat senarai sekolah: "+e.message);
+    return false;
+  }
+}
 async function segerakPelajar(senyap){
   const API=(window.KONFIG&&window.KONFIG.API_URL)||"";
   const badge=document.getElementById("status-segerak");
@@ -1599,6 +1618,7 @@ document.getElementById("borang-masuk").onsubmit = async (ev) => {
       localStorage.setItem(SESI, JSON.stringify({ id, exp: Date.now() + 8*60*60*1000 }));
       document.getElementById("kata-laluan").value = "";
       tunjukApp(true);
+      if(!state.sekolah.length) muatSekolahAuto(true);
     }else{
       ralat.textContent = "ID atau kata laluan salah.";
       document.getElementById("kata-laluan").value = "";
@@ -1613,7 +1633,10 @@ document.getElementById("btn-keluar").onclick = () => {
 };
 tunjukApp(sesiSah());
 
-muat(); pasang(); kosongBorang(); render(); muatPermintaan();
+(async () => {
+  muat(); pasang(); kosongBorang(); render(); muatPermintaan();
+  if(!state.sekolah.length) await muatSekolahAuto(true);
+})();
 /* segerak sendiri dari pangkalan data: sekali semasa buka, kemudian setiap 60 saat */
 segerakPelajar(true);
 setInterval(()=>{
