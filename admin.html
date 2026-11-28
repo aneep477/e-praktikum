@@ -1166,9 +1166,26 @@ function uaksi(a){ return apiURL()+"?aksi="+encodeURIComponent(a)+(KUNCI_ADMIN?"
 /* ---------- penyelia major & elektif ---------- */
 const PEN = { senarai: [], ic: [] };
 
+async function isiKomponenPenyelia(){
+  const sel = document.getElementById("pen-komponen");
+  if(!sel || sel.dataset.isi) return;
+  try{
+    const r = await fetch(uaksiLuar("komponen"), {cache:"no-store"});
+    const d = await r.json();
+    const senarai = Array.isArray(d) ? d : [];
+    if(!senarai.length) return;
+    sel.innerHTML = `<option value="">Semua komponen</option>` + senarai.map(k=>
+      `<option value="${esc(k.komponen)}">${esc(k.komponen)} — ${k.bilangan} pelajar${k.buka?"":" (ditutup)"}</option>`).join("");
+    sel.dataset.isi = "1";
+    const terbesar = senarai.slice().sort((a,b)=>b.bilangan-a.bilangan)[0];
+    if(terbesar && !sel.dataset.pilih){ sel.value = terbesar.komponen; sel.dataset.pilih = "1"; }
+  }catch(e){ /* diam */ }
+}
+
 async function muatPenyelia(){
   const st = document.getElementById("pen-status");
   st.textContent = "Memuat…";
+  await isiKomponenPenyelia();
   try{
     const k = document.getElementById("pen-komponen").value || "";
     const r = await fetch(uaksiLuar("seliaan_semua") + "&komponen=" + encodeURIComponent(k), {cache:"no-store"});
