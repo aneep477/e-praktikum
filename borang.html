@@ -130,6 +130,8 @@ th{font-weight:600;color:var(--ink-2)}
       <div><span>Program</span><b id="i-program"></b></div>
       <div><span>Kohort</span><b id="i-kohort"></b></div>
       <div><span>Komponen</span><b id="i-komponen"></b></div>
+      <div><span>Pensyarah penyelia</span><b id="i-penyelia">—</b></div>
+      <div><span>Sekolah ditempatkan</span><b id="i-sekolah">—</b></div>
       <div><span>Kapasiti sekolah</span><b>mengikut bilangan murid sekolah</b></div>
     </div>
   </div>
@@ -449,7 +451,8 @@ function normalisasi(p){
     alamat:p.alamat||"", latitud:(p.latitud??p.lat)||"", longitud:(p.longitud??p.lon)||"",
     kapasiti:p.kapasiti||0,
     rakan:Array.isArray(p.rakan)?p.rakan.join(";"):String(p.rakan||"").split(/[;:,|]/).map(x=>x.trim()).filter(Boolean).join(";"),
-    dikunci:!!p.dikunci, sekolah_ditetapkan:p.sekolah_ditetapkan||""
+    dikunci:!!p.dikunci, sekolah_ditetapkan:p.sekolah_ditetapkan||"",
+    sekolah_nama:p.sekolah_nama||"", penyelia:p.penyelia||null
   };
 }
 document.getElementById("masuk").onclick=async()=>{
@@ -511,6 +514,12 @@ document.getElementById("masuk").onclick=async()=>{
   document.getElementById("i-program").textContent=pelajar.program||"—";
   document.getElementById("i-kohort").textContent=pelajar.kohort||"—";
   document.getElementById("i-komponen").textContent=pelajar.komponen||"—";
+  document.getElementById("i-penyelia").textContent = pelajar.penyelia
+    ? (pelajar.penyelia.nama + (pelajar.penyelia.jawatan?" ("+pelajar.penyelia.jawatan+")":""))
+    : "Belum ditetapkan oleh jabatan";
+  document.getElementById("i-sekolah").textContent = pelajar.sekolah_ditetapkan
+    ? ((pelajar.sekolah_nama||"") + (pelajar.sekolah_nama?" · ":"") + pelajar.sekolah_ditetapkan)
+    : "Belum ditempatkan";
   document.getElementById("lat").value=pelajar.latitud||"";
   document.getElementById("lon").value=pelajar.longitud||"";
   document.getElementById("kapasiti").value=pelajar.kapasiti||0;
