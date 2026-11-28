@@ -135,6 +135,12 @@
       </div>
 
       <div class="row" style="margin-bottom:10px">
+        <label class="fld" style="min-width:170px">Jenis seliaan
+          <select id="jenis-pukal">
+            <option value="TERAS">Major (teras)</option>
+            <option value="ELEKTIF">Elektif</option>
+          </select>
+        </label>
         <label class="fld" style="min-width:260px">Tugaskan pelajar terpilih kepada
           <select id="pensyarah-pukal"><option value="">— pilih pensyarah —</option></select>
         </label>
@@ -147,7 +153,7 @@
         <table id="tbl">
           <thead><tr>
             <th style="width:28px"><input type="checkbox" id="pilih-semua" style="width:auto"></th>
-            <th>Pelajar</th><th>Opsyen</th><th>Sekolah</th><th>Jarak</th><th>Penyelia</th><th></th>
+            <th>Pelajar</th><th>Opsyen</th><th>Sekolah</th><th>Jarak</th><th>Penyelia major</th><th>Penyelia elektif</th><th></th>
           </tr></thead>
           <tbody></tbody>
         </table>
@@ -255,8 +261,11 @@ async function muatData(){
   }catch(e){ m.className="msg bad"; m.textContent="Gagal memuat: "+e.message; }
 }
 
-function nilaiPenyelia(p){
-  return Object.prototype.hasOwnProperty.call(ubah, p.ic) ? ubah[p.ic] : (p.email_pensyarah || "");
+function nilaiPenyelia(p, jenis){
+  const k = p.ic + "|" + (jenis||"TERAS");
+  if(Object.prototype.hasOwnProperty.call(ubah, k)) return ubah[k];
+  return (jenis==="ELEKTIF") ? (p.email_pensyarah_elektif || "")
+                             : (p.email_pensyarah_teras || p.email_pensyarah || "");
 }
 function bilanganUbah(){ return Object.keys(ubah).length; }
 function tandaUbah(){
@@ -270,7 +279,12 @@ function tandaUbah(){
 }
 function terisiSemasa(){
   const c = {};
-  (data.pelajar || []).forEach(function(p){ const e = nilaiPenyelia(p); if(e) c[e] = (c[e]||0)+1; });
+  (data.pelajar || []).forEach(function(p){
+    ["TERAS","ELEKTIF"].forEach(function(jn){
+      const e = nilaiPenyelia(p, jn);
+      if(e){ const k = String(e).toLowerCase(); c[k] = (c[k]||0)+1; }
+    });
+  });
   return c;
 }
 
@@ -312,36 +326,45 @@ function lukisJadual(){
   const semasa = terisiSemasa();
   const kunci = !!data.dikunci;
   $("tbl").tBodies[0].innerHTML = senarai.map(p=>{
-    const dipilih = nilaiPenyelia(p);
-    const pilihan = `<option value="">— belum ditetapkan —</option>` + (data.ahli||[]).map(a=>{
-      const terisi = semasa[String(a.email).toLowerCase()] || 0;
-      const penuh = a.kuota>0 && terisi>=a.kuota && dipilih!==a.email;
-      return `<option value="${esc(a.email)}" ${dipilih===a.email?"selected":""} ${(penuh||kunci)?"disabled":""}>${esc(a.nama)} (${terisi}/${a.kuota||"∞"})${penuh?" — penuh":""}</option>`;
-    }).join("");
+    const sel = (jenis) => {
+      const dipilih = nilaiPenyelia(p, jenis);
+      const kunciJ = kunci || (jenis==="ELEKTIF" ? p.seliaan_kunci_elektif : p.seliaan_kunci_teras);
+      const pilihan = `<option value="">— belum ditetapkan —</option>` + (data.ahli||[]).map(a=>{
+        const terisi = semasa[String(a.email).toLowerCase()] || 0;
+        const penuh = a.kuota>0 && terisi>=a.kuota && dipilih!==a.email;
+        return `<option value="${esc(a.email)}" ${dipilih===a.email?"selected":""} ${(penuh||kunciJ)?"disabled":""}>${esc(a.nama)} (${terisi}/${a.kuota||"∞"})${penuh?" — penuh":""}</option>`;
+      }).join("");
+      return { dipilih, kunciJ,
+        html: `<select data-ic="${esc(p.ic)}" data-jenis="${jenis}" ${kunciJ?"disabled":""} style="min-width:180px">${pilihan}</select>` };
+    };
+    const sT = sel("TERAS"), sE = sel("ELEKTIF");
+    const dipilih = sT.dipilih;
     return `<tr>
       <td><input type="checkbox" class="pilih" data-ic="${esc(p.ic)}" ${kunci?"disabled":""} style="width:auto"></td>
       <td><b>${esc(p.nama)}</b><br><span class="help">${esc(p.matrik||"")} · ${esc(p.ic)}</span></td>
       <td>${esc(p.opsyen)}</td>
       <td>${p.sekolah ? (p.sekolah_nama ? esc(p.sekolah_nama)+'<br><span class="help">'+esc(p.sekolah)+'</span>' : esc(p.sekolah)) : '<span class="pill bad">belum ditempatkan</span>'}</td>
       <td>${p.jarak!=null?p.jarak+" km":"—"}</td>
-      <td><select data-ic="${esc(p.ic)}" ${(kunci||p.seliaan_kunci)?"disabled":""} style="min-width:190px">${pilihan}</select></td>
-      <td>${dipilih?`<button class="btn-mini" data-buang="${esc(p.ic)}" ${kunci?"disabled":""}>buang</button>`:'<span class="pill warn">belum</span>'}</td>
+      <td>${sT.html}${sT.dipilih?`<button class="btn-mini" data-buang="${esc(p.ic)}" data-jenis="TERAS" ${sT.kunciJ?"disabled":""} style="margin-top:4px">buang</button>`:""}</td>
+      <td>${sE.html}${sE.dipilih?`<button class="btn-mini" data-buang="${esc(p.ic)}" data-jenis="ELEKTIF" ${sE.kunciJ?"disabled":""} style="margin-top:4px">buang</button>`:""}</td>
+      <td>${(sT.dipilih||sE.dipilih)?'<span class="pill ok">ditetapkan</span>':'<span class="pill warn">belum</span>'}</td>
     </tr>`;
   }).join("");
   $("kosong").hidden = senarai.length>0;
-  const sudah = (data.pelajar||[]).filter(p=>p.email_pensyarah).length;
+  const sudah = (data.pelajar||[]).filter(p=>nilaiPenyelia(p,"TERAS")||nilaiPenyelia(p,"ELEKTIF")).length;
   $("kira-pelajar").textContent = `${sudah}/${(data.pelajar||[]).length} pelajar telah ditetapkan penyelia`;
   $("pilih-semua").checked=false;
 
-  document.querySelectorAll("#tbl select[data-ic]").forEach(sel=>{
-    sel.onchange = () => {
-      ubah[sel.dataset.ic] = sel.value;
+  document.querySelectorAll("#tbl select[data-ic]").forEach(s=>{
+    s.onchange = () => {
+      ubah[s.dataset.ic + "|" + s.dataset.jenis] = s.value;
       lukisJadual(); isiAhli(); isiPukal(); tandaUbah();
+      if(!s.value) delete ubah[s.dataset.ic + "|" + s.dataset.jenis];
     };
   });
   document.querySelectorAll("#tbl [data-buang]").forEach(b=>{
     b.onclick = () => {
-      ubah[b.dataset.buang] = "";
+      ubah[b.dataset.buang + "|" + b.dataset.jenis] = "";
       lukisJadual(); isiAhli(); isiPukal(); tandaUbah();
     };
   });
@@ -355,11 +378,13 @@ async function simpanPerubahan(){
   if(!n) return toast("Tiada perubahan untuk disimpan.");
   const b = $("btn-simpan"); const asal = b.textContent; b.disabled = true; b.textContent = "Menyimpan…";
   let berjaya = 0; const gagal = [];
-  for(const ic of Object.keys(ubah)){
-    const emailP = ubah[ic];
+  for(const kunciUbah of Object.keys(ubah)){
+    const bahagi = kunciUbah.split("|");
+    const ic = bahagi[0], jenis = bahagi[1] || "TERAS";
+    const emailP = ubah[kunciUbah];
     const d = emailP
-      ? await api("seliaan_tetap", {email:sesi.email, ic, komponen:$("komponen").value, email_pensyarah:emailP})
-      : await api("seliaan_buang", {email:sesi.email, ic, komponen:$("komponen").value});
+      ? await api("seliaan_tetap", {email:sesi.email, ic, komponen:$("komponen").value, email_pensyarah:emailP, jenis})
+      : await api("seliaan_buang", {email:sesi.email, ic, komponen:$("komponen").value, jenis});
     if(d && d.ralat) gagal.push(d.ralat); else berjaya++;
   }
   ubah = {};
@@ -378,6 +403,7 @@ async function simpanPerubahan(){
 
 $("btn-tugaskan-pukal").onclick = () => {
   const emailP = $("pensyarah-pukal").value;
+  const jenisP = $("jenis-pukal").value || "TERAS";
   const terpilih = [...document.querySelectorAll("#tbl input.pilih:checked")].map(c=>c.dataset.ic);
   if(!emailP) return toast("Pilih pensyarah dahulu.");
   if(!terpilih.length) return toast("Tandakan sekurang-kurangnya seorang pelajar.");
@@ -390,10 +416,10 @@ $("btn-tugaskan-pukal").onclick = () => {
   let ditanda = 0, lebih = 0;
   terpilih.forEach(ic=>{
     const p = (data.pelajar||[]).find(x=>x.ic===ic);
-    const sudah = p && nilaiPenyelia(p)===emailP;
+    const sudah = p && nilaiPenyelia(p, jenisP)===emailP;
     if(!sudah && kuota>0 && terisi>=kuota){ lebih++; return; }
     if(!sudah) terisi++;
-    ubah[ic] = emailP; ditanda++;
+    ubah[ic + "|" + jenisP] = emailP; ditanda++;
   });
 
   lukisJadual(); isiAhli(); isiPukal(); tandaUbah();

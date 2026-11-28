@@ -130,7 +130,8 @@ th{font-weight:600;color:var(--ink-2)}
       <div><span>Program</span><b id="i-program"></b></div>
       <div><span>Kohort</span><b id="i-kohort"></b></div>
       <div><span>Komponen</span><b id="i-komponen"></b></div>
-      <div><span>Pensyarah penyelia</span><b id="i-penyelia">—</b></div>
+      <div><span>Pensyarah penyelia (major)</span><b id="i-penyelia">—</b></div>
+      <div><span>Pensyarah penyelia (elektif)</span><b id="i-penyelia-elektif">—</b></div>
       <div><span>Sekolah ditempatkan</span><b id="i-sekolah">—</b></div>
       <div><span>Kapasiti sekolah</span><b>mengikut bilangan murid sekolah</b></div>
     </div>
@@ -452,7 +453,8 @@ function normalisasi(p){
     kapasiti:p.kapasiti||0,
     rakan:Array.isArray(p.rakan)?p.rakan.join(";"):String(p.rakan||"").split(/[;:,|]/).map(x=>x.trim()).filter(Boolean).join(";"),
     dikunci:!!p.dikunci, sekolah_ditetapkan:p.sekolah_ditetapkan||"",
-    sekolah_nama:p.sekolah_nama||"", penyelia:p.penyelia||null
+    sekolah_nama:p.sekolah_nama||"", penyelia:p.penyelia||null,
+    penyelia_teras:p.penyelia_teras||p.penyelia||null, penyelia_elektif:p.penyelia_elektif||null
   };
 }
 document.getElementById("masuk").onclick=async()=>{
@@ -514,9 +516,9 @@ document.getElementById("masuk").onclick=async()=>{
   document.getElementById("i-program").textContent=pelajar.program||"—";
   document.getElementById("i-kohort").textContent=pelajar.kohort||"—";
   document.getElementById("i-komponen").textContent=pelajar.komponen||"—";
-  document.getElementById("i-penyelia").textContent = pelajar.penyelia
-    ? (pelajar.penyelia.nama + (pelajar.penyelia.jawatan?" ("+pelajar.penyelia.jawatan+")":""))
-    : "Belum ditetapkan oleh jabatan";
+  const namaPenyelia = (g) => g ? (g.nama + (g.jawatan?" ("+g.jawatan+")":"")) : "Belum ditetapkan oleh jabatan";
+  document.getElementById("i-penyelia").textContent = namaPenyelia(pelajar.penyelia_teras);
+  document.getElementById("i-penyelia-elektif").textContent = namaPenyelia(pelajar.penyelia_elektif);
   document.getElementById("i-sekolah").textContent = pelajar.sekolah_ditetapkan
     ? ((pelajar.sekolah_nama||"") + (pelajar.sekolah_nama?" · ":"") + pelajar.sekolah_ditetapkan)
     : "Belum ditempatkan";

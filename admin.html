@@ -220,6 +220,10 @@ td select{max-width:330px}
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v12H4z"/><path d="M8 9h8"/><path d="M8 13h5"/></svg>
         Permintaan <span class="count" id="cnt-permintaan">0</span>
       </button>
+      <button data-tab="penyelia">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 19c0-3.2 2.7-5.4 6-5.4s6 2.2 6 5.4"/><path d="M16 8h5"/><path d="M18.5 5.5v5"/></svg>
+        Penyelia <span class="count" id="cnt-penyelia">0</span>
+      </button>
       <button data-tab="laporan">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M7 19V9"/><path d="M12 19V5"/><path d="M17 19v-7"/></svg>
         Laporan
@@ -521,6 +525,32 @@ td select{max-width:330px}
             <th>Kumpulan</th><th>Komponen</th><th>Ahli</th><th>Pemandu</th><th>Sekolah</th><th>Status</th>
           </tr></thead><tbody></tbody></table>
         </div>
+      </div>
+    </section>
+    <section id="tab-penyelia" class="view">
+      <div class="view-head">
+        <div>
+          <h1>Penyelia major &amp; elektif</h1>
+          <p>Setiap pelajar boleh mempunyai <b>dua penyelia</b>: satu major (teras) dan satu elektif. Kunci menghalang Ketua/Penolong Ketua Jabatan menukar seliaan.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <label class="fld">Komponen <select id="pen-komponen"><option value="">Semua komponen</option></select></label>
+          <label class="fld">Cari <input id="pen-cari" placeholder="Nama pelajar atau pensyarah"></label>
+          <button class="btn" id="pen-muat">Muat semula</button>
+          <span class="spacer"></span>
+          <button class="btn-quiet" id="pen-kunci">Kunci semua</button>
+          <button class="btn-quiet" id="pen-buka">Buka kunci semua</button>
+          <span class="badge" id="pen-status">—</span>
+        </div>
+      </div>
+      <div class="card">
+        <table id="pen-tbl">
+          <thead><tr><th>Pelajar</th><th>Opsyen</th><th>Penyelia major</th><th>Penyelia elektif</th><th>Status</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <p class="help" id="pen-kira"></p>
       </div>
     </section>
   </main>
@@ -1133,6 +1163,60 @@ const OPSYEN_SENARAI=["Bahasa Melayu","Bahasa Inggeris (TESL)","Matematik","Sain
 function apiURL(){ return (window.KONFIG&&window.KONFIG.API_URL)||""; }
 const KUNCI_ADMIN=(window.KONFIG&&window.KONFIG.KUNCI)||"";
 function uaksi(a){ return apiURL()+"?aksi="+encodeURIComponent(a)+(KUNCI_ADMIN?"&kunci="+encodeURIComponent(KUNCI_ADMIN):""); }
+/* ---------- penyelia major & elektif ---------- */
+const PEN = { senarai: [], ic: [] };
+
+async function muatPenyelia(){
+  const st = document.getElementById("pen-status");
+  st.textContent = "Memuat…";
+  try{
+    const k = document.getElementById("pen-komponen").value || "";
+    const r = await fetch(uaksiLuar("seliaan_semua") + "&komponen=" + encodeURIComponent(k), {cache:"no-store"});
+    const d = await r.json();
+    if(d.ralat){ st.textContent = d.ralat; return; }
+    PEN.senarai = d.senarai || [];
+    lukisPenyelia();
+    st.textContent = PEN.senarai.length + " rekod seliaan";
+  }catch(e){ st.textContent = "Gagal memuat: " + e.message; }
+}
+
+function lukisPenyelia(){
+  const q = (document.getElementById("pen-cari").value || "").trim().toLowerCase();
+  const ikut = {};
+  PEN.senarai.forEach(r=>{
+    const k = r.ic + "|" + r.komponen;
+    if(!ikut[k]) ikut[k] = { ic:r.ic, nama:r.nama, matrik:r.matrik, opsyen:r.opsyen, komponen:r.komponen, teras:null, elektif:null, kunci:false };
+    if(r.jenis === "ELEKTIF") ikut[k].elektif = r.nama_pensyarah; else ikut[k].teras = r.nama_pensyarah;
+    if(r.dikunci) ikut[k].kunci = true;
+  });
+  const baris = Object.keys(ikut).map(k=>ikut[k])
+    .filter(x=>!q || (x.nama||"").toLowerCase().includes(q) || (x.teras||"").toLowerCase().includes(q) || (x.elektif||"").toLowerCase().includes(q))
+    .sort((a,b)=>String(a.nama).localeCompare(String(b.nama)));
+
+  document.querySelector("#pen-tbl tbody").innerHTML = baris.map(x=>`<tr>
+    <td><b>${esc(x.nama)}</b><br><span class="help">${esc(x.matrik||"")} · ${esc(x.ic)}</span></td>
+    <td>${esc(x.opsyen)}</td>
+    <td>${x.teras?esc(x.teras):'<span class="badge">—</span>'}</td>
+    <td>${x.elektif?esc(x.elektif):'<span class="badge">—</span>'}</td>
+    <td>${x.kunci?'<span class="badge ok">dikunci</span>':'<span class="badge">boleh diubah</span>'}</td>
+    <td><button class="btn-quiet" data-pen-ic="${esc(x.ic)}" data-pen-komponen="${esc(x.komponen)}" data-pen-kunci="${x.kunci?"0":"1"}">${x.kunci?"Buka kunci":"Kunci"}</button></td>
+  </tr>`).join("");
+
+  document.getElementById("pen-kira").textContent = baris.length + " pelajar dipaparkan.";
+  document.getElementById("cnt-penyelia").textContent = baris.length;
+
+  document.querySelectorAll("[data-pen-ic]").forEach(b=>{
+    b.onclick = async ()=>{
+      b.disabled = true; b.textContent = "Menyimpan…";
+      await fetch(uaksiLuar("seliaan_kunci"), {
+        method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body: JSON.stringify({aksi:"seliaan_kunci", ics:[b.dataset.penIc], komponen:b.dataset.penKomponen, dikunci:b.dataset.penKunci==="1"?"ya":""})
+      });
+      await muatPenyelia();
+    };
+  });
+}
+
 function uaksiLuar(a){ return (window.KONFIG&&window.KONFIG.API_URL||"")+"?aksi="+encodeURIComponent(a)+(KUNCI_ADMIN?"&kunci="+encodeURIComponent(KUNCI_ADMIN):""); }
 
 async function muatPermintaan(){
@@ -1944,8 +2028,26 @@ function pasang(){
       document.querySelectorAll("section").forEach(x=>x.classList.remove("active"));
       b.classList.add("active");
       document.getElementById("tab-"+b.dataset.tab).classList.add("active");
+      if(b.dataset.tab === "penyelia") muatPenyelia();
     };
   });
+  document.getElementById("pen-muat").onclick = muatPenyelia;
+  document.getElementById("pen-cari").oninput = lukisPenyelia;
+  document.getElementById("pen-komponen").onchange = muatPenyelia;
+  document.getElementById("pen-kunci").onclick = async ()=>{
+    const k = document.getElementById("pen-komponen").value || "";
+    if(!confirm("Kunci semua seliaan" + (k?" bagi "+k:"") + "?")) return;
+    await fetch(uaksiLuar("seliaan_kunci"), {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({aksi:"seliaan_kunci", ics:[], komponen:k, dikunci:"ya"})});
+    muatPenyelia();
+  };
+  document.getElementById("pen-buka").onclick = async ()=>{
+    const k = document.getElementById("pen-komponen").value || "";
+    if(!confirm("Buka kunci semua seliaan" + (k?" bagi "+k:"") + "?")) return;
+    await fetch(uaksiLuar("seliaan_kunci"), {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({aksi:"seliaan_kunci", ics:[], komponen:k, dikunci:""})});
+    muatPenyelia();
+  };
   document.getElementById("btn-import-sekolah").onclick=()=>document.getElementById("file-sekolah").click();
   document.getElementById("file-sekolah").onchange=e=>bacaFail(e, importSekolah);
   document.getElementById("btn-import-pelajar").onclick=()=>document.getElementById("file-pelajar").click();
