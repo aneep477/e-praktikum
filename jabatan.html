@@ -105,11 +105,13 @@
           <label class="fld" style="min-width:220px">Komponen
             <select id="komponen"></select>
           </label>
+          <button class="btn" id="btn-simpan" disabled>Simpan perubahan</button>
           <button class="btn-quiet" id="btn-kunci">Hantar &amp; kunci</button>
         </div>
       </div>
       <div class="ahli" id="senarai-ahli"></div>
       <p class="msg" id="msg-papan"></p>
+      <p class="help" id="status-ubah"></p>
     </div>
 
     <div class="card">
@@ -162,6 +164,7 @@
 const API = (window.KONFIG && window.KONFIG.API_URL) || "";
 const SESI_KEY = "jabatan-sesi-v1";
 let sesi = null, data = null;
+let ubah = {};   // ic -> email penyelia ("" = buang) — belum disimpan
 
 function $(id){ return document.getElementById(id); }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
@@ -245,15 +248,36 @@ async function muatData(){
     m.textContent = (data.pelajar||[]).length ? "" :
       "Tiada pelajar dalam komponen ini. Pilih komponen lain pada menu di atas.";
     sesi.jabatan = data.jabatan; simpanSesi(sesi);
-    isiAhli(); isiTapisan(); isiPukal(); lukisJadual();
+    isiAhli(); isiTapisan(); isiPukal(); lukisJadual(); tandaUbah();
     $("btn-kunci").textContent = data.dikunci ? "Buka kunci seliaan" : "Hantar & kunci";
   }catch(e){ m.className="msg bad"; m.textContent="Gagal memuat: "+e.message; }
 }
 
+function nilaiPenyelia(p){
+  return Object.prototype.hasOwnProperty.call(ubah, p.ic) ? ubah[p.ic] : (p.email_pensyarah || "");
+}
+function bilanganUbah(){ return Object.keys(ubah).length; }
+function tandaUbah(){
+  const n = bilanganUbah();
+  const b = $("btn-simpan");
+  if(!b) return;
+  b.disabled = n === 0;
+  b.textContent = n ? "Simpan perubahan (" + n + ")" : "Simpan perubahan";
+  const st = $("status-ubah");
+  if(st) st.textContent = n ? (n + " perubahan belum disimpan.") : "";
+}
+function terisiSemasa(){
+  const c = {};
+  (data.pelajar || []).forEach(function(p){ const e = nilaiPenyelia(p); if(e) c[e] = (c[e]||0)+1; });
+  return c;
+}
+
 function isiAhli(){
+  const semasa = terisiSemasa();
   $("senarai-ahli").innerHTML = (data.ahli||[]).map(a=>{
-    const penuh = a.kuota>0 && a.terisi>=a.kuota;
-    return `<span class="cip ${penuh?"penuh":""}">${esc(a.nama)}${a.jawatan!=="PENSYARAH"?" · "+esc(a.jawatan):""} — ${a.terisi}/${a.kuota||"∞"}</span>`;
+    const terisi = semasa[String(a.email).toLowerCase()] || 0;
+    const penuh = a.kuota>0 && terisi>=a.kuota;
+    return `<span class="cip ${penuh?"penuh":""}">${esc(a.nama)}${a.jawatan!=="PENSYARAH"?" · "+esc(a.jawatan):""} — ${terisi}/${a.kuota||"∞"}</span>`;
   }).join("");
 }
 
@@ -264,8 +288,9 @@ function isiTapisan(){
 }
 
 function isiPukal(){
+  const semasa = terisiSemasa();
   $("pensyarah-pukal").innerHTML = `<option value="">— pilih pensyarah —</option>` +
-    (data.ahli||[]).map(a=>`<option value="${esc(a.email)}">${esc(a.nama)} (${a.terisi}/${a.kuota||"∞"})</option>`).join("");
+    (data.ahli||[]).map(a=>`<option value="${esc(a.email)}">${esc(a.nama)} (${semasa[String(a.email).toLowerCase()]||0}/${a.kuota||"∞"})</option>`).join("");
 }
 
 function pelajarDitapis(){
@@ -282,12 +307,14 @@ function pelajarDitapis(){
 
 function lukisJadual(){
   const senarai = pelajarDitapis();
-  const namaAhli = {}; (data.ahli||[]).forEach(a=>namaAhli[a.email]=a.nama);
+  const semasa = terisiSemasa();
   const kunci = !!data.dikunci;
   $("tbl").tBodies[0].innerHTML = senarai.map(p=>{
+    const dipilih = nilaiPenyelia(p);
     const pilihan = `<option value="">— belum ditetapkan —</option>` + (data.ahli||[]).map(a=>{
-      const penuh = a.kuota>0 && a.terisi>=a.kuota && p.email_pensyarah!==a.email;
-      return `<option value="${esc(a.email)}" ${p.email_pensyarah===a.email?"selected":""} ${(penuh||kunci)?"disabled":""}>${esc(a.nama)} (${a.terisi}/${a.kuota||"∞"})${penuh?" — penuh":""}</option>`;
+      const terisi = semasa[String(a.email).toLowerCase()] || 0;
+      const penuh = a.kuota>0 && terisi>=a.kuota && dipilih!==a.email;
+      return `<option value="${esc(a.email)}" ${dipilih===a.email?"selected":""} ${(penuh||kunci)?"disabled":""}>${esc(a.nama)} (${terisi}/${a.kuota||"∞"})${penuh?" — penuh":""}</option>`;
     }).join("");
     return `<tr>
       <td><input type="checkbox" class="pilih" data-ic="${esc(p.ic)}" ${kunci?"disabled":""} style="width:auto"></td>
@@ -296,7 +323,7 @@ function lukisJadual(){
       <td>${p.sekolah?esc(p.sekolah):'<span class="pill bad">belum ditempatkan</span>'}</td>
       <td>${p.jarak!=null?p.jarak+" km":"—"}</td>
       <td><select data-ic="${esc(p.ic)}" ${(kunci||p.seliaan_kunci)?"disabled":""} style="min-width:190px">${pilihan}</select></td>
-      <td>${p.email_pensyarah?`<button class="btn-mini" data-buang="${esc(p.ic)}" ${kunci?"disabled":""}>buang</button>`:'<span class="pill warn">belum</span>'}</td>
+      <td>${dipilih?`<button class="btn-mini" data-buang="${esc(p.ic)}" ${kunci?"disabled":""}>buang</button>`:'<span class="pill warn">belum</span>'}</td>
     </tr>`;
   }).join("");
   $("kosong").hidden = senarai.length>0;
@@ -305,43 +332,55 @@ function lukisJadual(){
   $("pilih-semua").checked=false;
 
   document.querySelectorAll("#tbl select[data-ic]").forEach(sel=>{
-    sel.onchange = async () => {
-      const ic = sel.dataset.ic, emailP = sel.value;
-      if(!emailP){ await buang(ic); return; }
-      const d = await api("seliaan_tetap", {email:sesi.email, ic, komponen:$("komponen").value, email_pensyarah:emailP});
-      if(d.ralat){ toast(d.ralat); await muatData(); return; }
-      toast("Seliaan disimpan."); await muatData();
+    sel.onchange = () => {
+      ubah[sel.dataset.ic] = sel.value;
+      lukisJadual(); isiAhli(); isiPukal(); tandaUbah();
     };
   });
   document.querySelectorAll("#tbl [data-buang]").forEach(b=>{
-    b.onclick = ()=>buang(b.dataset.buang);
+    b.onclick = () => {
+      ubah[b.dataset.buang] = "";
+      lukisJadual(); isiAhli(); isiPukal(); tandaUbah();
+    };
   });
   $("pilih-semua").onchange = e => {
     document.querySelectorAll("#tbl input.pilih").forEach(c=>{ if(!c.disabled) c.checked=e.target.checked; });
   };
 }
 
-async function buang(ic){
-  const d = await api("seliaan_buang", {email:sesi.email, ic, komponen:$("komponen").value});
-  if(d.ralat) toast(d.ralat); else toast("Seliaan dibuang.");
+async function simpanPerubahan(){
+  const n = bilanganUbah();
+  if(!n) return toast("Tiada perubahan untuk disimpan.");
+  const b = $("btn-simpan"); const asal = b.textContent; b.disabled = true; b.textContent = "Menyimpan…";
+  let berjaya = 0; const gagal = [];
+  for(const ic of Object.keys(ubah)){
+    const emailP = ubah[ic];
+    const d = emailP
+      ? await api("seliaan_tetap", {email:sesi.email, ic, komponen:$("komponen").value, email_pensyarah:emailP})
+      : await api("seliaan_buang", {email:sesi.email, ic, komponen:$("komponen").value});
+    if(d && d.ralat) gagal.push(d.ralat); else berjaya++;
+  }
+  ubah = {};
+  b.textContent = asal;
   await muatData();
+  toast(berjaya + " perubahan disimpan" + (gagal.length ? ", " + gagal.length + " gagal" : "") + ".");
+  if(gagal.length) $("msg-papan").textContent = gagal[0];
 }
 
-$("btn-tugaskan-pukal").onclick = async () => {
+$("btn-tugaskan-pukal").onclick = () => {
   const emailP = $("pensyarah-pukal").value;
   const terpilih = [...document.querySelectorAll("#tbl input.pilih:checked")].map(c=>c.dataset.ic);
   if(!emailP) return toast("Pilih pensyarah dahulu.");
   if(!terpilih.length) return toast("Tandakan sekurang-kurangnya seorang pelajar.");
-  let berjaya=0, gagal=[];
-  for(const ic of terpilih){
-    const d = await api("seliaan_tetap", {email:sesi.email, ic, komponen:$("komponen").value, email_pensyarah:emailP});
-    if(d.ralat) gagal.push(d.ralat); else berjaya++;
-  }
-  toast(`${berjaya} pelajar ditugaskan${gagal.length?", "+gagal.length+" gagal":""}.`);
-  await muatData();
+  terpilih.forEach(ic=>{ ubah[ic] = emailP; });
+  lukisJadual(); isiAhli(); isiPukal(); tandaUbah();
+  toast(terpilih.length + " pelajar ditanda — tekan Simpan perubahan.");
 };
 
+$("btn-simpan").onclick = simpanPerubahan;
+
 $("btn-kunci").onclick = async () => {
+  if(bilanganUbah()) return toast("Simpan perubahan dahulu sebelum mengunci.");
   const buka = !!data.dikunci;
   const d = await api("seliaan_hantar", {email:sesi.email, komponen:$("komponen").value, buka});
   if(d.ralat) return toast(d.ralat);
@@ -349,9 +388,16 @@ $("btn-kunci").onclick = async () => {
   await muatData();
 };
 
-["komponen"].forEach(id=>$(id).addEventListener("change", muatData));
+$("komponen").addEventListener("change", () => {
+  if(bilanganUbah() && !confirm("Ada perubahan belum disimpan. Buang perubahan dan tukar komponen?")) return;
+  ubah = {}; muatData();
+});
 ["tapisan-opsyen","tapisan-status"].forEach(id=>$(id).addEventListener("change", lukisJadual));
 $("tapisan-cari").addEventListener("input", lukisJadual);
+
+window.addEventListener("beforeunload", (e) => {
+  if(bilanganUbah()){ e.preventDefault(); e.returnValue = ""; }
+});
 
 /* ---------- mula ---------- */
 (function mula(){
