@@ -322,7 +322,7 @@ function lukisJadual(){
       <td><input type="checkbox" class="pilih" data-ic="${esc(p.ic)}" ${kunci?"disabled":""} style="width:auto"></td>
       <td><b>${esc(p.nama)}</b><br><span class="help">${esc(p.matrik||"")} · ${esc(p.ic)}</span></td>
       <td>${esc(p.opsyen)}</td>
-      <td>${p.sekolah?esc(p.sekolah):'<span class="pill bad">belum ditempatkan</span>'}</td>
+      <td>${p.sekolah ? (p.sekolah_nama ? esc(p.sekolah_nama)+'<br><span class="help">'+esc(p.sekolah)+'</span>' : esc(p.sekolah)) : '<span class="pill bad">belum ditempatkan</span>'}</td>
       <td>${p.jarak!=null?p.jarak+" km":"—"}</td>
       <td><select data-ic="${esc(p.ic)}" ${(kunci||p.seliaan_kunci)?"disabled":""} style="min-width:190px">${pilihan}</select></td>
       <td>${dipilih?`<button class="btn-mini" data-buang="${esc(p.ic)}" ${kunci?"disabled":""}>buang</button>`:'<span class="pill warn">belum</span>'}</td>
@@ -366,7 +366,14 @@ async function simpanPerubahan(){
   b.textContent = asal;
   await muatData();
   toast(berjaya + " perubahan disimpan" + (gagal.length ? ", " + gagal.length + " gagal" : "") + ".");
-  if(gagal.length) $("msg-papan").textContent = gagal[0];
+  if(gagal.length){
+    const unik = [...new Set(gagal)];
+    const m = $("msg-papan");
+    m.className = "msg bad";
+    m.innerHTML = "<b>" + gagal.length + " gagal disimpan:</b><br>" +
+      unik.slice(0,5).map(x=>"• "+esc(x)).join("<br>") +
+      (unik.length>5 ? "<br>…" : "");
+  }
 }
 
 $("btn-tugaskan-pukal").onclick = () => {
@@ -374,9 +381,30 @@ $("btn-tugaskan-pukal").onclick = () => {
   const terpilih = [...document.querySelectorAll("#tbl input.pilih:checked")].map(c=>c.dataset.ic);
   if(!emailP) return toast("Pilih pensyarah dahulu.");
   if(!terpilih.length) return toast("Tandakan sekurang-kurangnya seorang pelajar.");
-  terpilih.forEach(ic=>{ ubah[ic] = emailP; });
+
+  const ahli = (data.ahli||[]).find(a=>String(a.email).toLowerCase()===String(emailP).toLowerCase());
+  const semasa = terisiSemasa();
+  let terisi = semasa[String(emailP).toLowerCase()] || 0;
+  const kuota = ahli ? (ahli.kuota||0) : 0;
+
+  let ditanda = 0, lebih = 0;
+  terpilih.forEach(ic=>{
+    const p = (data.pelajar||[]).find(x=>x.ic===ic);
+    const sudah = p && nilaiPenyelia(p)===emailP;
+    if(!sudah && kuota>0 && terisi>=kuota){ lebih++; return; }
+    if(!sudah) terisi++;
+    ubah[ic] = emailP; ditanda++;
+  });
+
   lukisJadual(); isiAhli(); isiPukal(); tandaUbah();
-  toast(terpilih.length + " pelajar ditanda — tekan Simpan perubahan.");
+  if(lebih){
+    const m = $("msg-papan"); m.className="msg bad";
+    m.textContent = lebih + " pelajar tidak dapat ditanda kerana kuota " + (ahli?ahli.nama:"") +
+      " penuh (" + terisi + "/" + kuota + "). Laraskan kuota dalam sheet Pensyarah jika perlu.";
+  }else{
+    $("msg-papan").textContent = "";
+  }
+  toast(ditanda + " pelajar ditanda — tekan Simpan perubahan." + (lebih?" ("+lebih+" melebihi kuota)":""));
 };
 
 $("btn-simpan").onclick = simpanPerubahan;
