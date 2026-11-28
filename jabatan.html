@@ -220,8 +220,10 @@ function bukaPapan(){
   $("pintu").hidden=true; $("pintu-tukar").hidden=true; $("papan").hidden=false; $("btn-keluar").hidden=false;
   const j = sesi.jabatan || {};
   $("tajuk-jabatan").textContent = j.nama || "Jabatan anda";
+  const lintas = String(j.lintas||"")==="ya" || j.lintas===true;
   $("butiran-pensyarah").textContent = sesi.nama + " · " + (sesi.jawatan||"PENSYARAH") +
-    (j.opsyen && j.opsyen.length ? " · Opsyen: " + j.opsyen.join(", ") : "");
+    (lintas ? " · Lintas jabatan (semua opsyen)" :
+      (j.opsyen && j.opsyen.length ? " · Opsyen: " + j.opsyen.join(", ") : ""));
   $("sub-header").textContent = (j.nama ? j.nama + " — " : "") + "IPG Kampus Darulaman";
   muatKomponen();
 }
