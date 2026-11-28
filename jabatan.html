@@ -224,17 +224,16 @@ function bukaPapan(){
 }
 
 async function muatKomponen(){
-  try{
-    const tp = await api("tetingkap");
-    const senarai = Object.keys(tp||{}).filter(k=>tp[k]!==false);
-    const semua = Object.keys(tp||{});
-    const pilih = senarai.length ? senarai : semua;
-    $("komponen").innerHTML = pilih.map(k=>`<option>${esc(k)}</option>`).join("");
-    if(!pilih.length) throw new Error("tiada komponen");
-  }catch(e){
-    $("komponen").innerHTML = ["Praktikum Fasa 2/Internship","Praktikum Fasa 1","PBS 1","PBS 2"]
-      .map(k=>`<option>${k}</option>`).join("");
+  let senarai = [];
+  try{ senarai = await api("komponen"); }catch(e){ /* guna lalai */ }
+  if(!Array.isArray(senarai) || !senarai.length){
+    senarai = [{komponen:"Praktikum Fasa 2/Internship", bilangan:0, buka:true}];
   }
+  const adaPelajar = senarai.filter(x=>x.bilangan>0);
+  const papar = adaPelajar.length ? adaPelajar : senarai;
+  $("komponen").innerHTML = papar.map(x=>
+    `<option value="${esc(x.komponen)}">${esc(x.komponen)}${x.bilangan?` — ${x.bilangan} pelajar`:""}${x.buka?"":" (tetingkap ditutup)"}</option>`
+  ).join("");
   muatData();
 }
 
@@ -243,7 +242,8 @@ async function muatData(){
   try{
     data = await api("seliaan", {email: sesi.email, komponen: $("komponen").value});
     if(data.ralat){ m.className="msg bad"; m.textContent=data.ralat; return; }
-    m.textContent = "";
+    m.textContent = (data.pelajar||[]).length ? "" :
+      "Tiada pelajar dalam komponen ini. Pilih komponen lain pada menu di atas.";
     sesi.jabatan = data.jabatan; simpanSesi(sesi);
     isiAhli(); isiTapisan(); isiPukal(); lukisJadual();
     $("btn-kunci").textContent = data.dikunci ? "Buka kunci seliaan" : "Hantar & kunci";
